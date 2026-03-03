@@ -1,0 +1,6 @@
+moviepy
+pydub
+librosa
+mutagen
+pillow
+pytest
