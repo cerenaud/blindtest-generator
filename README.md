@@ -12,6 +12,7 @@ Automatic blindtest video generator from local MP3 files.
 ## Installation
 ```bash
 pip install -r requirements.txt
+[ffmpeg](https://ffmpeg.org/download.html) — must be installed and added to PATH
 ```
 
 ## Usage
