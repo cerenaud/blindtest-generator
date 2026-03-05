@@ -11,7 +11,7 @@ class AudioTrack:
     def __init__(self, file_path: str):
         self.path = BASE_DIR / file_path
 
-        # Lecture des metadonnees ID3
+        # metadonnees ID3
         try:
             tags = ID3(self.path)
             self.title = tags["TIT2"].text[0]
@@ -21,7 +21,7 @@ class AudioTrack:
             self.artist = "Unknown"
 
         self.audio = AudioSegment.from_mp3(self.path)
-        self.total_duration = len(self.audio)  # durée totale en millisecondes
+        self.total_duration = len(self.audio)
 
     def get_excerpt(self, start_ms: int, duration: int) -> AudioSegment:
         return self.audio[start_ms:start_ms + duration]
