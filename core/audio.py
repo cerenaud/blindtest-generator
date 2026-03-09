@@ -9,7 +9,11 @@ BASE_DIR = Path(__file__).parent.parent  # remonte de core/ vers la racine
 
 class AudioTrack:
     def __init__(self, file_path: str):
-        self.path = BASE_DIR / file_path
+        path = Path(file_path)
+        if path.is_absolute():
+            self.path = path
+        else:
+            self.path = BASE_DIR / file_path
 
         # metadonnees ID3
         try:

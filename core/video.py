@@ -41,18 +41,19 @@ def build_clip(track: AudioTrack, excerpt_duration: int, reveal_duration: int):
 #clip.write_videofile(str(BASE_DIR / "output/test2.mp4"), fps=30)
 #os.unlink(tmp_name)  # nettoyage après export
 
+
+
 def assemble_video(clips: list, output_path: str):
-    #a video is composed of a list of subsequent clips
     final = concatenate_videoclips(clips)
-    final.write_videofile(output_path, fps=24)
+    final.write_videofile(str(BASE_DIR / output_path), fps=24)
 
 #test video
-track1 = AudioTrack("data/music/Gorillaz - Feel Good Inc.mp3")
-track2 = AudioTrack("data/music/Black Sabbath - Paranoid (Official Audio).mp3")
-clip1, tmp1 = build_clip(track1, 10, 5)
-clip2, tmp2 = build_clip(track2, 10, 5)
+#track1 = AudioTrack("data/music/Gorillaz - Feel Good Inc.mp3")
+#track2 = AudioTrack("data/music/Black Sabbath - Paranoid (Official Audio).mp3")
+#clip1, tmp1 = build_clip(track1, 10, 5)
+#, tmp2 = build_clip(track2, 10, 5)
 
-assemble_video([clip1, clip2], str(BASE_DIR / "output/test_final.mp4"))
+##assemble_video([clip1, clip2], str(BASE_DIR / "output/test_final.mp4"))
 
-os.unlink(tmp1)
-os.unlink(tmp2)
+#os.unlink(tmp1)
+#os.unlink(tmp2)
