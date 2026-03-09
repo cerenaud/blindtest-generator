@@ -7,8 +7,10 @@ import os
 
 
 def build_clip(track: AudioTrack, excerpt_duration: int, reveal_duration: int):
+    #a clip = one music with 10s of a excerpt + a 5s of a reveal of the artist and the song name
+    #duration may vary
     total_duration = excerpt_duration + reveal_duration
-    excerpt = track.get_excerpt(0, total_duration * 1000)
+    excerpt = track.get_excerpt(0, total_duration * 1000) #from ms to s
     tmp = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
     excerpt.export(tmp.name, format="mp3")
     tmp.close()
@@ -34,6 +36,23 @@ def build_clip(track: AudioTrack, excerpt_duration: int, reveal_duration: int):
 
     return final_clip, tmp.name  # on retourne le nom pour nettoyer après
 
-clip, tmp_name = build_clip(AudioTrack("data/music/Gorillaz - Feel Good Inc.mp3"), 10, 5)
-clip.write_videofile(str(BASE_DIR / "output/test2.mp4"), fps=30)
-os.unlink(tmp_name)  # nettoyage après export
+#test clip
+#clip, tmp_name = build_clip(AudioTrack("data/music/Gorillaz - Feel Good Inc.mp3"), 10, 5)
+#clip.write_videofile(str(BASE_DIR / "output/test2.mp4"), fps=30)
+#os.unlink(tmp_name)  # nettoyage après export
+
+def assemble_video(clips: list, output_path: str):
+    #a video is composed of a list of subsequent clips
+    final = concatenate_videoclips(clips)
+    final.write_videofile(output_path, fps=24)
+
+#test video
+track1 = AudioTrack("data/music/Gorillaz - Feel Good Inc.mp3")
+track2 = AudioTrack("data/music/Black Sabbath - Paranoid (Official Audio).mp3")
+clip1, tmp1 = build_clip(track1, 10, 5)
+clip2, tmp2 = build_clip(track2, 10, 5)
+
+assemble_video([clip1, clip2], str(BASE_DIR / "output/test_final.mp4"))
+
+os.unlink(tmp1)
+os.unlink(tmp2)
