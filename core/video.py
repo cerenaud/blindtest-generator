@@ -6,7 +6,7 @@ import tempfile
 import os
 
 
-def build_clip(track: AudioTrack, excerpt_duration: int, reveal_duration: int):
+def build_clip(track: AudioTrack, excerpt_duration: int, reveal_duration: int, track_number: int, total_tracks: int):
     #a clip = one music with 10s of a excerpt + a 5s of a reveal of the artist and the song name
     #duration may vary
     total_duration = excerpt_duration + reveal_duration
@@ -17,7 +17,7 @@ def build_clip(track: AudioTrack, excerpt_duration: int, reveal_duration: int):
 
     def make_frame_excerpt(t):
         countdown = excerpt_duration - int(t)
-        frame = make_excerpt_frame(countdown, 1, 1)
+        frame = make_excerpt_frame(countdown, track_number, total_tracks)
         return np.array(frame)
 
     def make_frame_reveal(t):

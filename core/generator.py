@@ -22,9 +22,11 @@ def generate_blindtest(
     mp3_files = list((BASE_DIR / music_folder).glob("*.mp3")) #list of path for AudioTrack
     clips = []
     selected = random.sample(mp3_files, nb_tracks)  # nb_tracks fichiers sans répétition
+    track_number_counter = 0
     for mp3 in selected:
+        track_number_counter += 1
         track = AudioTrack(str(mp3))
-        clip, tmp = build_clip(track, 10, 5)
+        clip, tmp = build_clip(track, 10, 5,track_number_counter,nb_tracks)
         clips.append(clip)
     assemble_video(clips, output_path)
 
