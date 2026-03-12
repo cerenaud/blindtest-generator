@@ -32,9 +32,12 @@ class AudioTrack:
         instance = cls.__new__(cls)
         instance.title = db_row[1]
         instance.artist = db_row[2]
-        instance.path = Path(db_row[7])  # preview_path
-        instance.audio = AudioSegment.from_mp3(instance.path)
-        instance.total_duration = len(instance.audio)
+        instance.path = Path(db_row[9])
+        try:
+            instance.audio = AudioSegment.from_mp3(instance.path)
+            instance.total_duration = len(instance.audio)
+        except Exception:
+            raise ValueError(f"Impossible de charger {instance.path}")
         return instance
 
     def get_excerpt(self, start_ms: int, duration: int) -> AudioSegment:
