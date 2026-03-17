@@ -25,7 +25,10 @@ class AudioTrack:
     FileNotFoundError
         If the file does not exist at the given path.
     """
-    def __init__(self, file_path: str) -> None:
+    def __init__(
+            self,
+            file_path: str
+    ) -> None:
         path = Path(file_path)
         if path.is_absolute():
             self.path = path
@@ -44,7 +47,10 @@ class AudioTrack:
         self.total_duration = len(self.audio)
 
     @classmethod
-    def from_db(cls, db_row: tuple) -> AudioTrack:
+    def from_db(
+            cls,
+            db_row: tuple
+    ) -> AudioTrack:
         """Create an AudioTrack instance from a database row.
 
         Alternative constructor to __init__, used when loading tracks
@@ -78,7 +84,11 @@ class AudioTrack:
             raise ValueError(f"Cannot load {instance.path}")
         return instance
 
-    def get_excerpt(self, start_ms: int, duration_ms: int) -> AudioSegment:
+    def get_excerpt(
+            self,
+            start_ms: int,
+            duration_ms: int
+    ) -> AudioSegment:
         """Get an excerpt from a song.
 
         Parameters
@@ -95,7 +105,10 @@ class AudioTrack:
 
         return self.audio[start_ms:start_ms + duration_ms]
 
-    def get_random_excerpt(self, duration_ms: int)-> AudioSegment:
+    def get_random_excerpt(
+            self,
+            duration_ms: int
+    ) -> AudioSegment:
         """Get a random excerpt from a song.
 
         Parameters
