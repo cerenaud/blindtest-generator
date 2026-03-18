@@ -40,7 +40,7 @@ def generate_blindtest(
     for i in range(len(mp3_files)):
         try:
             track = AudioTrack.from_db(mp3_files[i])
-            clip, tmp = build_clip(track, excerpt_duration, reveal_duration, track_number_counter, nb_tracks)
+            clip, tmp = build_clip(track, track_number_counter, nb_tracks, excerpt_duration, reveal_duration)
             clips.append(clip)
             track_number_counter += 1
 

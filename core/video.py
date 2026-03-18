@@ -3,12 +3,36 @@ import numpy as np
 from core.visuals import make_excerpt_frame, make_reveal_frame
 from core.audio import AudioTrack, AudioSegment, BASE_DIR
 import tempfile
-import os
 
+def build_clip(
+        track: AudioTrack,
+        track_number: int,
+        total_tracks: int,
+        excerpt_duration: int = 10,
+        reveal_duration: int = 5,
+) -> tuple[VideoClip,str] :
+    """Create a clip for a given song (from an AudioTrack object). A clip is composed of
+    a frame to guess to song (usually about 10 seconds) and a reveal frame showing
+    the song title and the artist. A blindtest is a sequence of different clips
 
-def build_clip(track: AudioTrack, excerpt_duration: int, reveal_duration: int, track_number: int, total_tracks: int):
-    #a clip = one music with 10s of a excerpt + a 5s of a reveal of the artist and the song name
-    #duration may vary
+        Parameters
+        ----------
+        track : AudioTrack
+            The song track from which the clip will be build
+        track_number : tuple
+            Index of the current track in the blindtest.
+        total_tracks
+            Total number of tracks in the blindtest.
+        excerpt_duration : int
+            Duration in s of the guessing frame
+        reveal_duration : int
+            Duration in s of the reveal frame
+
+        Returns
+        -------
+        tuple[VideoClip,str]
+            A video clip for a song and a temp path
+        """
     total_duration = excerpt_duration + reveal_duration
     excerpt = track.get_excerpt(0, total_duration * 1000) #from ms to s
     tmp = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)

@@ -5,3 +5,4 @@ mutagen
 pillow
 pytest
 requests
+numpy
