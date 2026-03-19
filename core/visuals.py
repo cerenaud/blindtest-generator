@@ -1,6 +1,6 @@
 from PIL import Image, ImageDraw, ImageFont
 
-def make_excerpt_frame(
+def make_guessing_frame(
         countdown_value : int,
         track_number : int,
         total : int,

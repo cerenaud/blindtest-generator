@@ -5,7 +5,27 @@ import requests
 
 DB_PATH = BASE_DIR / "data" / "blindtest.db"
 
+#Create a database to download previews from deezer
+# Genre and ID:
+# 0 : All
+# 132 : Pop
+# 116: Rap/ Hip Hop
+# 152 : Rock
+# 113 : Dance
+# 165 : R&B
+# 85 : Alternative
+# 106 : Electro
+# 52 : Chanson française
+# 144 : Reggae
+# 129 : Jazz
+# 464 : Metal
+# 169 : Soul & Funk
+# 153 : Blues
+# 197 : Latino
+
 def init_db():
+    """Create a database for the music previews from deezer API.
+    """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("""
@@ -27,7 +47,17 @@ def init_db():
     conn.close()
 
 
-def _insert_tracks(tracks: list):
+def _insert_tracks(
+        tracks: list
+):
+    """Insert tracks into database
+
+    Parameters
+    ----------
+    tracks : list
+        a list of tracks from the deezer API.
+
+    """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     for track in tracks:
@@ -72,14 +102,30 @@ def import_by_artist(artist_id: int, nb_tracks: int):
     _insert_tracks(response.json()["data"])
 
 
-def get_tracks(nb_tracks: int, genre: str = None, artist: str = None) -> list:
+def get_tracks(
+        nb_tracks: int,
+        genre: str = None,
+        artist: str = None
+) -> list:
+    """Read into the database to eet tracks.
+
+    Parameters
+    ----------
+    nb_tracks : int
+        numbers of tracks wanted.
+    genre : str
+        filter by genre
+    artist : str
+        filter by artist
+
+    """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     query = "SELECT * FROM tracks WHERE preview_path IS NOT NULL"
     params = []
 
-    # Filtres optionnels
+    # optionnals filters
     conditions = []
     if genre:
         conditions.append("genre = ?")
@@ -88,7 +134,7 @@ def get_tracks(nb_tracks: int, genre: str = None, artist: str = None) -> list:
         conditions.append("artist = ?")
         params.append(artist)
     if conditions:
-        query += " WHERE " + " AND ".join(conditions)
+        query += " AND " + " AND ".join(conditions)
 
     query += " ORDER BY RANDOM() LIMIT ?"
     params.append(nb_tracks)
@@ -99,16 +145,28 @@ def get_tracks(nb_tracks: int, genre: str = None, artist: str = None) -> list:
     return rows
 
 
-def download_preview(url: str, track_id: int) -> str | None:
+def download_preview(
+        url: str,
+        track_id: int
+) -> str | None:
+    """Download a preview of a track
+
+    Parameters
+    ----------
+    url : str
+        url of the tracks
+    track_id : int
+        id of the tracks
+    """
     response = requests.get(url)
     if response.status_code != 200 or len(response.content) < 1000:
-        print(f"Skipping {track_id} - bad response")
+        print(f"Skipping {track_id} - failed response")
         return None
     preview_path = BASE_DIR / "data" / "music" / f"{track_id}.mp3"
     with open(preview_path, "wb") as f:
         f.write(response.content)
 
-    # Mettre à jour la base
+    # Update database
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("UPDATE tracks SET preview_path = ? WHERE deezer_id = ?",
@@ -117,7 +175,6 @@ def download_preview(url: str, track_id: int) -> str | None:
     conn.close()
     return str(preview_path)
 
-    return str(preview_path)
 
 def download_all_previews():
     conn = sqlite3.connect(DB_PATH)
@@ -133,6 +190,9 @@ def download_all_previews():
 
 
 def clean_db():
+    """Clean the database from eventual corrupted files.
+
+    """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT deezer_id, preview_path FROM tracks WHERE preview_path IS NOT NULL")
@@ -148,4 +208,4 @@ def clean_db():
 
     conn.commit()
     conn.close()
-    print(f"Nettoyé {cleaned} entrées")
+    print(f"{cleaned} cleaned entries")
