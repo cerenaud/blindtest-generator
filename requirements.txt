@@ -4,3 +4,5 @@ librosa
 mutagen
 pillow
 pytest
+requests
+numpy

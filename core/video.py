@@ -1,59 +1,98 @@
 from moviepy import VideoClip, AudioFileClip, concatenate_videoclips
 import numpy as np
-from core.visuals import make_excerpt_frame, make_reveal_frame
+from core.visuals import make_guessing_frame, make_reveal_frame
 from core.audio import AudioTrack, AudioSegment, BASE_DIR
 import tempfile
-import os
 
+def build_clip(
+        track: AudioTrack,
+        track_number: int,
+        total_tracks: int,
+        guessing_duration: int = 10,
+        reveal_duration: int = 5,
+) -> tuple[VideoClip,str] :
+    """Create a clip for a given song (from an AudioTrack object). A clip is composed of
+    different frame to guess a song (usually about 10 seconds) and a reveal frame showing
+    the song title and the artist. A blindtest is a sequence of different clips
 
-def build_clip(track: AudioTrack, excerpt_duration: int, reveal_duration: int):
-    #a clip = one music with 10s of a excerpt + a 5s of a reveal of the artist and the song name
-    #duration may vary
-    total_duration = excerpt_duration + reveal_duration
+        Parameters
+        ----------
+        track : AudioTrack
+            The song track from which the clip will be build
+        track_number : tuple
+            Index of the current track in the blindtest.
+        total_tracks
+            Total number of tracks in the blindtest.
+        guessing_duration : int
+            Duration in s of the guessing frame
+        reveal_duration : int
+            Duration in s of the reveal frame
+
+        Returns
+        -------
+        tuple[VideoClip,str]
+            A video clip for a song and a temp path
+        """
+    total_duration = guessing_duration + reveal_duration
     excerpt = track.get_excerpt(0, total_duration * 1000) #from ms to s
     tmp = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
     excerpt.export(tmp.name, format="mp3")
     tmp.close()
 
-    def make_frame_excerpt(t):
-        countdown = excerpt_duration - int(t)
-        frame = make_excerpt_frame(countdown, 1, 1)
+    def make_guessing_frame_to_numpy(
+            t : int
+    ) -> np.ndarray :
+        """Convert a frame to a numpy array for moviepy to create a video clip with
+        different arrays
+
+        Parameters
+        ----------
+        t : int
+            time of the remaining countdown.
+
+        Returns
+        -------
+        np.array
+            A np.array of the guessing frame
+        """
+        countdown = guessing_duration - int(t)
+        frame = make_guessing_frame(countdown, track_number, total_tracks)
         return np.array(frame)
 
-    def make_frame_reveal(t):
+    def make_reveal_frame_to_numpy(_) -> np.ndarray:
         frame = make_reveal_frame(track.artist, track.title)
         return np.array(frame)
 
-    excerpt_clip = VideoClip(make_frame_excerpt, duration=excerpt_duration)
+    guessing_clip = VideoClip(make_guessing_frame_to_numpy, duration=guessing_duration)
     audio_clip = AudioFileClip(tmp.name)
-    excerpt_clip = excerpt_clip.with_audio(audio_clip)
+    guessing_clip = guessing_clip.with_audio(audio_clip)
 
-    reveal_clip = VideoClip(make_frame_reveal, duration=reveal_duration)
+    reveal_clip = VideoClip(make_reveal_frame_to_numpy, duration=reveal_duration)
 
-    final_clip = concatenate_videoclips([excerpt_clip, reveal_clip])
-    audio_clip = AudioFileClip(tmp.name)
+    final_clip = concatenate_videoclips([guessing_clip, reveal_clip])
     final_clip = final_clip.with_audio(audio_clip)
 
-    return final_clip, tmp.name  # on retourne le nom pour nettoyer après
+    return final_clip, tmp.name
 
-#test clip
-#clip, tmp_name = build_clip(AudioTrack("data/music/Gorillaz - Feel Good Inc.mp3"), 10, 5)
-#clip.write_videofile(str(BASE_DIR / "output/test2.mp4"), fps=30)
-#os.unlink(tmp_name)  # nettoyage après export
+def assemble_video(
+        clips: list,
+        output_path: str
+) -> None :
+    """Assemble a list of different clips to make a video
 
+    Parameters
+    ----------
+    clips : list
+        a list of clips built by buil_clips
+    output_path : str
+        the path to the output video file
 
-
-def assemble_video(clips: list, output_path: str):
+    Returns
+    -------
+    None
+    """
+    print(output_path)
+    print(type(output_path))
     final = concatenate_videoclips(clips)
     final.write_videofile(str(BASE_DIR / output_path), fps=24)
 
-#test video
-#track1 = AudioTrack("data/music/Gorillaz - Feel Good Inc.mp3")
-#track2 = AudioTrack("data/music/Black Sabbath - Paranoid (Official Audio).mp3")
-#clip1, tmp1 = build_clip(track1, 10, 5)
-#, tmp2 = build_clip(track2, 10, 5)
-
-##assemble_video([clip1, clip2], str(BASE_DIR / "output/test_final.mp4"))
-
-#os.unlink(tmp1)
-#os.unlink(tmp2)
