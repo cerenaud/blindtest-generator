@@ -214,3 +214,5 @@ data/blindtest.db
 sandbox.py
 output/
 >>>>>>> feat/music-database
+data/covers/
+data/music/
