@@ -215,6 +215,18 @@ def download_album_cover(
     conn.close()
     return str(cover_path)
 
+def download_all_album_covers():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT deezer_id, album_cover_url FROM tracks WHERE album_cover_path IS NULL")
+    rows = cursor.fetchall()
+    conn.close()
+
+    for deezer_id, album_cover_url in rows:
+        if album_cover_url:
+            path = download_album_cover(album_cover_url, deezer_id)
+            print(f"Downloaded {deezer_id}")
+
 def clean_db():
     """Clean the database from eventual corrupted files.
 

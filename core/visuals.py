@@ -74,6 +74,7 @@ def get_font_size(
 def make_reveal_frame(
         artist: str,
         title: str,
+        album_cover_path: str,
         frame_resolution: tuple[int,int] = (1920,1080)
 ) -> Image.Image :
     """Create an image frame for the reveal part of a blindtest.
@@ -87,6 +88,8 @@ def make_reveal_frame(
         Name of the artist.
     title : str
         Title of the track.
+    album_cover_path : str
+        Path to the album cover image (.jpg).
     frame_resolution : tuple
         Resolution of the image frame. Default is 1920*1080 (1080p standard YouTube)
 
@@ -102,15 +105,27 @@ def make_reveal_frame(
     #Add a rectangle in which an image of the artist of the song will be included, or a excerpt from a clip
     #TODO
     width, height = frame_resolution
-    draw.rectangle([(int(width * 0.11), int(height * 0.05)), (int(width * 0.89), int(height * 0.70))], fill=(30, 30, 30))
-    draw.text(
-        (width // 2, height // 3),
-        "?",
-        fill=(100, 100, 100),
-        font=ImageFont.truetype("arial.ttf", int(height * 0.25)),
-        anchor="mm"
-    )
+    # draw.rectangle([(int(width * 0.11), int(height * 0.05)), (int(width * 0.89), int(height * 0.70))], fill=(30, 30, 30))
+    # draw.text(
+    #     (width // 2, height // 3),
+    #     "?",
+    #     fill=(100, 100, 100),
+    #     font=ImageFont.truetype("arial.ttf", int(height * 0.25)),
+    #     anchor="mm"
+    # )
+    #insert album cover
+    #album_cover = Image.open("C:/Users/chris/Desktop/Dev/blindtest-generator/data/covers/discovery.jpg")
+    album_cover = Image.open(album_cover_path)
 
+    #need to stretch to keep proportion, below is too wide:
+    album_cover = album_cover.convert("RGB")
+
+    rect_x1, rect_y1 = int(width * 0.11), int(height * 0.05)
+    rect_x2, rect_y2 = int(width * 0.89), int(height * 0.70)
+    rect_w = rect_x2 - rect_x1
+    rect_h = rect_y2 - rect_y1
+    album_cover = album_cover.resize((rect_w, rect_h))
+    img.paste(album_cover, (rect_x1, rect_y1))
 
     text = f"{artist} - {title}"
     font = get_font_size(draw, text, 1000, "arial.ttf", 65)  # max_width = 1000px

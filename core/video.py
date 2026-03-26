@@ -19,7 +19,7 @@ def build_clip(
         ----------
         track : AudioTrack
             The song track from which the clip will be build
-        track_number : tuple
+        track_number : int
             Index of the current track in the blindtest.
         total_tracks
             Total number of tracks in the blindtest.
@@ -60,7 +60,7 @@ def build_clip(
         return np.array(frame)
 
     def make_reveal_frame_to_numpy(_) -> np.ndarray:
-        frame = make_reveal_frame(track.artist, track.title)
+        frame = make_reveal_frame(track.artist, track.title, track.album_cover_path)
         return np.array(frame)
 
     guessing_clip = VideoClip(make_guessing_frame_to_numpy, duration=guessing_duration)

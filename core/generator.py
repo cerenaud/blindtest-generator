@@ -15,7 +15,7 @@ def generate_blindtest(
 
     Parameters
     ----------
-    music_folder : int
+    music_folder : path
         path where music files are located.
     output_path : str
         Path where the blindtest video will be saved.
