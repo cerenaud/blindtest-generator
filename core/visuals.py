@@ -117,14 +117,20 @@ def make_reveal_frame(
     #album_cover = Image.open("C:/Users/chris/Desktop/Dev/blindtest-generator/data/covers/discovery.jpg")
     album_cover = Image.open(album_cover_path)
 
-    #need to stretch to keep proportion, below is too wide:
+    #TODO: stretching the cover to fit in the center but will
+    # it works for every frame_resolution and screen? need to check
     album_cover = album_cover.convert("RGB")
 
     rect_x1, rect_y1 = int(width * 0.11), int(height * 0.05)
     rect_x2, rect_y2 = int(width * 0.89), int(height * 0.70)
     rect_w = rect_x2 - rect_x1
     rect_h = rect_y2 - rect_y1
-    album_cover = album_cover.resize((rect_w, rect_h))
+    #album_cover = album_cover.resize((rect_w, rect_h))
+    album_cover = album_cover.resize((int(album_cover.width*1.5), int(album_cover.height*1.5)))
+
+    #new rect_x1 to center the cover
+    #img.paste(album_cover, (rect_x1, rect_y1))
+    rect_x1 = int((width - album_cover.width)/2)
     img.paste(album_cover, (rect_x1, rect_y1))
 
     text = f"{artist} - {title}"
