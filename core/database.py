@@ -109,9 +109,11 @@ def import_by_artist(artist_id: int, nb_tracks: int):
 def get_tracks(
         nb_tracks: int,
         genre: str = None,
-        artist: str = None
+        artist: str = None,
+        min_year: int = None,
+        max_year: int = None
 ) -> list:
-    """Read into the database to eet tracks.
+    """Read into the database to get tracks.
 
     Parameters
     ----------
@@ -121,6 +123,10 @@ def get_tracks(
         filter by genre
     artist : str
         filter by artist
+    min_year: int:
+        filter by minimum release year for a song.
+    max_year: int
+        filter by maximum release year for a song.
 
     """
     conn = sqlite3.connect(DB_PATH)
@@ -137,6 +143,12 @@ def get_tracks(
     if artist:
         conditions.append("artist = ?")
         params.append(artist)
+    if min_year:
+        conditions.append("year >= ?")
+        params.append(min_year)
+    if max_year:
+        conditions.append("year <= ?")
+        params.append(max_year)
     if conditions:
         query += " AND " + " AND ".join(conditions)
 

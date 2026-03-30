@@ -9,6 +9,9 @@ def generate_blindtest(
     nb_tracks: int = 10,
     guessing_duration: int = 10,
     reveal_duration: int = 5,
+    genre: str | list[str] = None ,
+    min_year: int = None,
+    max_year: int = None,
         ) -> str:
     """Scan data/music folder with deezer previews and generate a blindtest
     video from
@@ -25,6 +28,12 @@ def generate_blindtest(
         duration of the guessing part for a song in the blindtest.
     reveal_duration: int
         duration of the reveal part for a song in the blindtest.
+    genre: str | list[str]
+        music genre of the blindtest. Could be one or more.
+    min_year: int:
+        minimum release year for a music to appear in the blindtest.
+    max_year: int:
+        maximum release year for a music to appear in the blindtest.
 
     Returns
     -------
@@ -33,7 +42,7 @@ def generate_blindtest(
     """
     clean_db()
 
-    mp3_files = get_tracks(nb_tracks)
+    mp3_files = get_tracks(nb_tracks,genre,min_year=min_year,max_year=max_year)
     clips = []
     track_number_counter = 1
     for i in range(len(mp3_files)):
