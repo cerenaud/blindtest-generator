@@ -1,7 +1,10 @@
 import sqlite3
 from pathlib import Path
+
+from ai.agents import correct_release_year
 from core.audio import BASE_DIR
 import requests
+import ai.agents
 
 DB_PATH = BASE_DIR / "data" / "blindtest.db"
 
@@ -60,6 +63,10 @@ def _insert_tracks(
         a list of tracks from the deezer API.
 
     """
+    data = {
+        "songs": []
+    }
+
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     for track in tracks:
@@ -76,7 +83,7 @@ def _insert_tracks(
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)
         """, (
             track["id"],
-            track["title"],
+            track["title_short"],
             track["artist"]["name"],
             track["album"]["title"],
             genre,
@@ -86,6 +93,37 @@ def _insert_tracks(
             track["preview"],
             album_cover_url,
         ))
+
+        if any(word in track["title"] for word in ["Anniversary", "Remaster"]): #probably wrong release year
+
+            # cursor.execute("""
+            #                 SELECT id FROM tracks WHERE deezer_id = ?
+            #             """, (track["id"],))
+            #
+            # row = cursor.fetchone()
+            # row_id = row[0] if row else None
+            #
+            # # if row_id:
+            # #     print(track["title"], row_id)
+
+            data["songs"].append({
+                "name": track["title_short"],
+                "artist":  track["artist"]["name"],
+                "release_year": year,
+                "id": track["id"] #get the row
+            })
+
+    #call to agent.py to correct data
+    data = correct_release_year(data).model_dump()
+
+    #insert the corrected yeear in databasee
+    for song in data["songs"]:
+        cursor.execute("""
+            UPDATE tracks
+            SET year = ?
+            WHERE deezer_id = ?
+        """, (song["release_year"], song["id"]))
+
     conn.commit()
     conn.close()
 
