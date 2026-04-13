@@ -4,7 +4,6 @@ from pathlib import Path
 from ai.agents import correct_release_year
 from core.audio import BASE_DIR
 import requests
-import ai.agents
 
 DB_PATH = BASE_DIR / "data" / "blindtest.db"
 
@@ -195,6 +194,9 @@ def get_tracks(
 
     cursor.execute(query, params)
     rows = cursor.fetchall()
+
+
+
     conn.close()
     return rows
 

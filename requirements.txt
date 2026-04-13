@@ -6,3 +6,7 @@ pillow
 pytest
 requests
 numpy
+langchain-openai
+langchain-core
+pydantic
+python-dotenv
