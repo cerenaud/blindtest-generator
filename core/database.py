@@ -202,22 +202,24 @@ def get_tracks(
 
 
 def download_preview(
-        url: str,
         deezer_id: int
 ) -> str | None:
     """Download a preview of a track
 
     Parameters
     ----------
-    url : str
-        url of the preview
     deezer_id : int
         deezer id of the track.
     """
-    response = requests.get(url)
+    #fetch the preview url which is temporary
+    response_id = requests.get(f"https://api.deezer.com/track/{deezer_id}")
+    track = response_id.json()
+    preview_url = track["preview"]
+    response_preview = requests.get(preview_url)
+
     preview_path = BASE_DIR / "data" / "music" / f"{deezer_id}.mp3"
     with open(preview_path, "wb") as f:
-        f.write(response.content)
+        f.write(response_preview.content)
 
     # Update database
     conn = sqlite3.connect(DB_PATH)
@@ -232,15 +234,14 @@ def download_preview(
 def download_all_previews():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT deezer_id, preview_url FROM tracks WHERE preview_path IS NULL")
+    cursor.execute("SELECT deezer_id FROM tracks WHERE preview_path IS NULL")
     rows = cursor.fetchall()
     conn.close()
 
-    for deezer_id, preview_url in rows:
-        if preview_url:
-            path = download_preview(preview_url, deezer_id)
-            time.sleep(2)
-            print(f"Downloaded {deezer_id}")
+    for row in rows:
+        deezer_id = row[0]
+        path = download_preview(deezer_id)
+        print(f"Downloaded {deezer_id}")
 
 def download_album_cover(
     url: str,
