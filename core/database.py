@@ -3,6 +3,7 @@ from pathlib import Path
 from ai.agents import correct_release_year
 from core.audio import BASE_DIR
 import requests
+import time
 
 DB_PATH = BASE_DIR / "data" / "blindtest.db"
 
@@ -202,22 +203,19 @@ def get_tracks(
 
 def download_preview(
         url: str,
-        track_id: int
+        deezer_id: int
 ) -> str | None:
     """Download a preview of a track
 
     Parameters
     ----------
     url : str
-        url of the tracks
-    track_id : int
-        id of the tracks
+        url of the preview
+    deezer_id : int
+        deezer id of the track.
     """
     response = requests.get(url)
-    if response.status_code != 200 or len(response.content) < 1000:
-        print(f"Skipping {track_id} - failed response")
-        return None
-    preview_path = BASE_DIR / "data" / "music" / f"{track_id}.mp3"
+    preview_path = BASE_DIR / "data" / "music" / f"{deezer_id}.mp3"
     with open(preview_path, "wb") as f:
         f.write(response.content)
 
@@ -225,7 +223,7 @@ def download_preview(
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("UPDATE tracks SET preview_path = ? WHERE deezer_id = ?",
-                   (str(preview_path), track_id))
+                   (str(preview_path), deezer_id))
     conn.commit()
     conn.close()
     return str(preview_path)
@@ -241,6 +239,7 @@ def download_all_previews():
     for deezer_id, preview_url in rows:
         if preview_url:
             path = download_preview(preview_url, deezer_id)
+            time.sleep(2)
             print(f"Downloaded {deezer_id}")
 
 def download_album_cover(
@@ -249,9 +248,9 @@ def download_album_cover(
 ) -> str | None:
 
     response = requests.get(url)
-    if response.status_code != 200 or len(response.content) < 1000:
-        print(f"Skipping {track_id} - failed response")
-        return None
+    # if response.status_code != 200 or len(response.content) < 1000:
+    #     print(f"Skipping {track_id} - failed response")
+    #     return None
 
     cover_path = BASE_DIR / "data" / "covers" / f"{track_id}.jpg"
     with open(cover_path, "wb") as f:
