@@ -40,7 +40,6 @@ def init_db():
             year INTEGER,
             popularity INTEGER,
             duration INTEGER,
-            preview_url TEXT,
             preview_path TEXT,
             album_cover_url TEXT,
             album_cover_path TEXT,
@@ -78,8 +77,8 @@ def _insert_tracks(
         popularity = track.get("rank", None)
 
         cursor.execute("""
-            INSERT OR IGNORE INTO tracks (deezer_id, title, artist, album, genre, year, popularity, duration, preview_url, album_cover_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+            INSERT OR IGNORE INTO tracks (deezer_id, title, artist, album, genre, year, popularity, duration, album_cover_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
         """, (
             track["id"],
             track["title_short"],
@@ -89,7 +88,6 @@ def _insert_tracks(
             year,
             popularity,
             track["duration"],
-            track["preview"],
             album_cover_url,
         ))
 

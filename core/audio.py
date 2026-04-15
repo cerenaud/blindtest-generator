@@ -81,13 +81,13 @@ class AudioTrack:
         instance.year = db_row[5]
         instance.popularity = db_row[6]
         instance.duration = db_row[7]
-        instance.path = Path(db_row[9])
-        instance.album_cover_path = db_row[11]
+        instance.path = Path(db_row[8])
+        instance.album_cover_path = db_row[10]
         try:
             instance.audio = AudioSegment.from_mp3(instance.path)
             instance.total_duration = len(instance.audio)
         except Exception:
-            raise ValueError(f"Cannot load {instance.path}")
+                raise ValueError(f"Cannot load {instance.path}")
         return instance
 
     def get_excerpt(
