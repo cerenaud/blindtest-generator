@@ -199,6 +199,30 @@ def get_tracks(
     return rows
 
 
+def get_genres() -> list:
+    """Read into the database to get genres.
+    """
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    query = """
+        SELECT DISTINCT genre
+        FROM tracks
+        WHERE genre IS NOT NULL
+    """
+    query += " ORDER BY genre ASC"
+
+    cursor.execute(query)
+    rows = cursor.fetchall()
+
+    conn.close()
+
+    # Optionnel : transformer [(genre,), ...] en [genre, ...]
+    genres = [row[0] for row in rows]
+
+    return genres
+
+
 def download_preview(
         deezer_id: int
 ) -> str | None:
