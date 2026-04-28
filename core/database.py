@@ -91,7 +91,7 @@ def _insert_tracks(
             album_cover_url,
         ))
 
-        if any(word in track["title"] for word in ["Anniversary", "Remaster"]): #probably wrong release year
+        if any(word in track["title"] for word in ["Anniversary", "Remaster", "Anniversaire", "Deluxe", "Remastered", "Best", "deluxe", "Edition"]): #probably wrong release year
 
             # cursor.execute("""
             #                 SELECT id FROM tracks WHERE deezer_id = ?
