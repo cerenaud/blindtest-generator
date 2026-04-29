@@ -1,5 +1,7 @@
-from moviepy import VideoClip, AudioFileClip, concatenate_videoclips, VideoFileClip
+from moviepy import VideoClip, AudioFileClip, concatenate_videoclips, VideoFileClip, TextClip, CompositeVideoClip
 import numpy as np
+from numba.core.ir_utils import replace_vars
+
 from core.visuals import make_guessing_frame, make_reveal_frame
 from core.audio import AudioTrack, AudioSegment, BASE_DIR
 import tempfile
@@ -85,7 +87,7 @@ def build_clip_with_video(
     """Create a clip for a given song (from an AudioTrack object). A clip is composed of
     different frame to guess a song (usually about 10 seconds) and a reveal frame showing
     the song title and the artist. A blindtest is a sequence of different clips
-    This function add a excerpt of the videoclip of the song instead of the album cover.
+    This function add an excerpt of the videoclip of the song instead of the album cover.
 
         Parameters
         ----------
@@ -137,10 +139,43 @@ def build_clip_with_video(
     audio_clip = AudioFileClip(tmp.name)
     guessing_clip = guessing_clip.with_audio(audio_clip)
 
+    #TODO: dont hardcode target_resolution
     reveal_video = VideoFileClip(video_path,target_resolution=(1920,1080))
     #can changge start_time to synch with the audio of the preview
     reveal_video = reveal_video.subclipped(0, reveal_duration)
 
+    #add the artist and title
+    # Generate a text clip
+    #usee get_font and frame resolution for size and font_size ?
+    # txt_clip = TextClip(text="GoRILLAZ - FEEL good inc",
+    #                     font='arial',font_size=75,
+    #                     color='white',
+    #                     stroke_color="black",
+    #                     method="caption",
+    #                     size=(1920,1080))
+    # txt_clip = txt_clip.with_position(("center", "center")).with_duration(reveal_duration)
+
+    shadow = TextClip(
+        text=f"{track.artist} - {track.title}",
+        font="arial",
+        font_size=75,
+        color="black",
+        method="label",
+        text_align="center",
+        size=(1600,90)
+    ).with_position(("center", 805)).with_duration(reveal_duration)
+
+    txt_clip = TextClip(
+        text=f"{track.artist} - {track.title}",
+        font="arial",
+        font_size=75,
+        color="white",
+        method="label",
+        text_align="center",
+        size=(1600,90)
+    ).with_position(("center", 800)).with_duration(reveal_duration)
+
+    reveal_video = CompositeVideoClip([reveal_video,shadow, txt_clip])
 
     #compose because we have a numpy videoclip (guessingg_clip) and a videofileclip (reveal_video)
     #TODO: add a transition clip with the parameter "transition"

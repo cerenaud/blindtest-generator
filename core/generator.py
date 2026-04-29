@@ -46,10 +46,11 @@ def generate_blindtest(
     mp3_files = get_tracks(nb_tracks,genre,min_year=min_year,max_year=max_year)
     clips = []
     track_number_counter = 1
-    #video_path = "C:/Users/chris/Downloads/Gorillaz - Feel Good Inc. (Official Video).mp4"
+    video_path = "C:/Users/chris/Downloads/Gorillaz - Feel Good Inc. (Official Video).mp4"
     for i in range(len(mp3_files)):
         track = AudioTrack.from_db(mp3_files[i])
-        clip, tmp = build_clip(track, track_number_counter, nb_tracks, guessing_duration, reveal_duration)
+        #clip, tmp = build_clip(track, track_number_counter, nb_tracks, guessing_duration, reveal_duration)
+        clip, tmp = build_clip_with_video(track, track_number_counter, nb_tracks, video_path,guessing_duration, reveal_duration)
         clips.append(clip)
         track_number_counter += 1
 
