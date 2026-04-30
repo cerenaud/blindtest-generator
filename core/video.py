@@ -144,36 +144,27 @@ def build_clip_with_video(
     #can changge start_time to synch with the audio of the preview
     reveal_video = reveal_video.subclipped(0, reveal_duration)
 
-    #add the artist and title
-    # Generate a text clip
-    #usee get_font and frame resolution for size and font_size ?
-    # txt_clip = TextClip(text="GoRILLAZ - FEEL good inc",
-    #                     font='arial',font_size=75,
-    #                     color='white',
-    #                     stroke_color="black",
-    #                     method="caption",
-    #                     size=(1920,1080))
-    # txt_clip = txt_clip.with_position(("center", "center")).with_duration(reveal_duration)
-
+    #text to add to reveal video
     shadow = TextClip(
         text=f"{track.artist} - {track.title}",
         font="arial",
-        font_size=75,
+        font_size= 75 if len(f"{track.artist} - {track.title}") < 30 else 55,
         color="black",
         method="label",
         text_align="center",
-        size=(1600,90)
+        size=(1600,100)
     ).with_position(("center", 805)).with_duration(reveal_duration)
 
     txt_clip = TextClip(
         text=f"{track.artist} - {track.title}",
         font="arial",
-        font_size=75,
+        font_size= 75 if len(f"{track.artist} - {track.title}") < 30 else 55,
         color="white",
         method="label",
         text_align="center",
-        size=(1600,90)
+        size=(1600,100)
     ).with_position(("center", 800)).with_duration(reveal_duration)
+
 
     reveal_video = CompositeVideoClip([reveal_video,shadow, txt_clip])
 
