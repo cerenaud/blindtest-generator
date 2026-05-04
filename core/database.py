@@ -1,9 +1,15 @@
+import os
 import sqlite3
 from pathlib import Path
+
+from moviepy import VideoFileClip
+
 from ai.agents import correct_release_year
 from core.audio import BASE_DIR
 import requests
-import time
+from yt_dlp import YoutubeDL
+import tempfile
+import shutil
 
 DB_PATH = BASE_DIR / "data" / "blindtest.db"
 
@@ -296,3 +302,104 @@ def clean_db():
     conn.commit()
     conn.close()
     print(f"{cleaned} cleaned entries")
+
+
+
+
+def get_youtube_video_url(
+        artist: str,
+        title: str
+) -> str | None:
+    query = f"{artist} - {title} official video"
+
+    ydl_opts = {
+        "quiet": True,
+        "extract_flat": True,
+        "skip_download": True,
+    }
+
+    with YoutubeDL(ydl_opts) as ydl:
+
+        results = ydl.extract_info(
+            f"ytsearch5:{query}",
+            download=False
+        )
+
+        entries = results.get("entries", [])
+
+        if not entries:
+            return None
+
+        video = entries[0]
+        #usual tags for an official video
+        if "official" and "video" in video["title"].lower():
+            return f"https://www.youtube.com/watch?v={video['id']}"
+
+        # or "clip officiel" for my frenchies
+        elif "officiel" and "clip" in video["title"].lower():
+            return f"https://www.youtube.com/watch?v={video['id']}"
+
+        else: #apparently no official video
+            return None
+
+def download_youtube_video(
+        youtube_url: str,
+        video_path: str,
+        start_time: int,
+        end_time: int,
+
+):
+    """Download a youtube video and crop it between start_time and end_time (No need
+    for a full length video when the video only appears for a few seconds in a blindtest).
+
+    Parameters
+    ----------
+     youtube_url: str
+        url of the YouTube video to download
+    video_path: str
+        path to save the video.
+    start_time: int
+        start time of the video.
+    end_time: int
+        end of the video to crop.
+
+    Returns
+    -------
+    """
+    temp_dir = tempfile.mkdtemp()
+
+    try:
+        ydl_opts = { #options for yt-dlp
+                #"format": "bestvideo+bestaudio/best", #best quality but codec not generally compatible
+                "format": "bestvideo[vcodec*=avc1]+bestaudio/best", #avc1 more supported codec
+                "merge_output_format": "mp4",
+                "outtmpl": f"{temp_dir}/%(title)s.%(ext)s", #yt-dlp teemplate
+            }
+
+        with YoutubeDL(ydl_opts) as ydl:
+            #get the info from the url and download it in tempfile
+            info = ydl.extract_info(youtube_url, download=True)
+            temp_file = ydl.prepare_filename(info)
+            temp_file = os.path.splitext(temp_file)[0] + ".mp4"
+
+        #moviepy to open,edit and write the final video
+        clip = VideoFileClip(temp_file)
+        clip = clip.subclipped(start_time, end_time)
+        clip.write_videofile(video_path,fps=24)
+
+    finally: #delete tempfile
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+def download_all_youtube_videos():
+    #for title - artist in db:
+    #get url and write file in video_path in db (ADD)
+    #if none ask ai and write file in video_path in db (ADD)
+    #else add null or do nothing because its already at null ?
+    conn = sqlite3.connect(DB_PATH)
+
+
+if __name__ == "__main__":
+    url = get_youtube_video_url("Eagles", "Hotel California")
+    video_path ="C:/Users/chris/Desktop/Dev/blindtest-generator/output/test_dl_ytb_video.mp4"
+    download_youtube_video(url,video_path,60,65)

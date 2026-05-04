@@ -47,8 +47,10 @@ def generate_blindtest(
     clips = []
     track_number_counter = 1
     video_path = "C:/Users/chris/Downloads/Gorillaz - Feel Good Inc. (Official Video).mp4"
+    video_path = "C:/Users/chris/Desktop/Dev/blindtest-generator/output/test_dl_ytb_video.mp4"
     for i in range(len(mp3_files)):
         track = AudioTrack.from_db(mp3_files[i])
+        # will need to choose, use build_clip_with_video only if the clip exist, else use build_clip to use album cover
         #clip, tmp = build_clip(track, track_number_counter, nb_tracks, guessing_duration, reveal_duration)
         clip, tmp = build_clip_with_video(track, track_number_counter, nb_tracks, video_path,guessing_duration, reveal_duration)
         clips.append(clip)

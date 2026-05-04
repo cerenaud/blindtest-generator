@@ -141,7 +141,7 @@ def build_clip_with_video(
 
     #TODO: dont hardcode target_resolution
     reveal_video = VideoFileClip(video_path,target_resolution=(1920,1080))
-    #can changge start_time to synch with the audio of the preview
+    #can change start_time to synch with the audio of the preview
     reveal_video = reveal_video.subclipped(0, reveal_duration)
 
     #text to add to reveal video

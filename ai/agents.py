@@ -44,3 +44,9 @@ def correct_release_year(data: dict)  :
     return chain.invoke({
         "input": json.dumps(data)
     })
+
+
+
+def is_youtube_video():
+    #ask ai to know if there is a clip else return null/none
+    return
