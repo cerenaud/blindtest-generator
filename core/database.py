@@ -4,12 +4,13 @@ from pathlib import Path
 
 from moviepy import VideoFileClip
 
-from ai.agents import correct_release_year
+from ai.agents import correct_release_year, is_official_clip
 from core.audio import BASE_DIR
 import requests
 from yt_dlp import YoutubeDL
 import tempfile
 import shutil
+from langdetect import detect
 
 DB_PATH = BASE_DIR / "data" / "blindtest.db"
 
@@ -46,9 +47,11 @@ def init_db():
             year INTEGER,
             popularity INTEGER,
             duration INTEGER,
+            country TEXT,
             preview_path TEXT,
             album_cover_url TEXT,
             album_cover_path TEXT,
+            video_path TEXT,
             deezer_id INTEGER UNIQUE
         )
     """)
@@ -73,20 +76,82 @@ def _insert_tracks(
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
+    # for track in tracks:
+    #     # Appel supplémentaire pour genre et year
+    #     album_id = track["album"]["id"]
+    #     album_data = requests.get(f"https://api.deezer.com/album/{album_id}").json()
+    #     album_cover_url = album_data.get("cover_big", None)
+    #     genre = album_data["genres"]["data"][0]["name"] if album_data["genres"]["data"] else None
+    #     year = int(album_data["release_date"][:4]) if "release_date" in album_data else None
+    #     popularity = track.get("rank", None)
+    #
+    #     cursor.execute("""
+    #         INSERT OR IGNORE INTO tracks (deezer_id, title, artist, album, genre, year, popularity, duration, country, album_cover_url)
+    #         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)
+    #     """, (
+    #         track["id"],
+    #         track["title_short"],
+    #         track["artist"]["name"],
+    #         track["album"]["title"],
+    #         genre,
+    #         year,
+    #         popularity,
+    #         track["duration"],
+    #         track["isrc"][:2], #extract the 2 first character to get the country
+    #         album_cover_url,
+    #     ))
+    #
     for track in tracks:
-        # Appel supplémentaire pour genre et year
+
+        track_id = track["id"]
+
+        # FULL TRACK DATA (contains isrc)
+        full_track = requests.get(
+            f"https://api.deezer.com/track/{track_id}"
+        ).json()
+
+        isrc = full_track.get("isrc")
+        country = isrc[:2] if isrc else None
+
+        # album infos
         album_id = track["album"]["id"]
-        album_data = requests.get(f"https://api.deezer.com/album/{album_id}").json()
-        album_cover_url = album_data.get("cover_big", None)
-        genre = album_data["genres"]["data"][0]["name"] if album_data["genres"]["data"] else None
-        year = int(album_data["release_date"][:4]) if "release_date" in album_data else None
-        popularity = track.get("rank", None)
+
+        album_data = requests.get(
+            f"https://api.deezer.com/album/{album_id}"
+        ).json()
+
+        album_cover_url = album_data.get("cover_big")
+
+        genre = (
+            album_data["genres"]["data"][0]["name"]
+            if album_data["genres"]["data"]
+            else None
+        )
+
+        year = (
+            int(album_data["release_date"][:4])
+            if album_data.get("release_date")
+            else None
+        )
+
+        popularity = track.get("rank")
 
         cursor.execute("""
-            INSERT OR IGNORE INTO tracks (deezer_id, title, artist, album, genre, year, popularity, duration, album_cover_url)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
+            INSERT OR IGNORE INTO tracks (
+                deezer_id,
+                title,
+                artist,
+                album,
+                genre,
+                year,
+                popularity,
+                duration,
+                country,
+                album_cover_url
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            track["id"],
+            track_id,
             track["title_short"],
             track["artist"]["name"],
             track["album"]["title"],
@@ -94,6 +159,7 @@ def _insert_tracks(
             year,
             popularity,
             track["duration"],
+            country,
             album_cover_url,
         ))
 
@@ -304,27 +370,154 @@ def clean_db():
     print(f"{cleaned} cleaned entries")
 
 
+#MUSIC SEARCH
+def has_music_video_section(artist, title) -> bool:
+#will search wikipedia, if the song has its own page, it will look for "music video" section
+#which is always there if the video exists. If not, return False.
+#If the song doesn't have its page its likely that there is not a video for the song.
+# The search  will return probably a page of thee artist,
+#or a list of song or a related page to the artist but it will then not have
+#music video in it, so it will return False.
 
+    base_url = f"https://en.wikipedia.org/w/api.php"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (music-video-checker/1.0)"
+    }
+
+    # 1) Search page
+    search_query = f"{artist} {title}"
+
+    try:
+        r = requests.get(
+            base_url,
+            params={
+                "action": "query",
+                "list": "search",
+                "srsearch": search_query,
+                "format": "json"
+            },
+            headers=headers,
+            timeout=10
+        )
+
+        if r.status_code != 200:
+            return False
+
+        data = r.json()
+
+    except Exception:
+        return False
+
+    search_results = data.get("query", {}).get("search", [])
+    if not search_results:
+        return False
+
+    page_title = search_results[0]["title"]
+    print(title)
+
+    # 2) Get sections
+    try:
+        r = requests.get(
+            base_url,
+            params={
+                "action": "parse",
+                "page": page_title,
+                "prop": "sections",
+                "format": "json"
+            },
+            headers=headers,
+            timeout=10
+        )
+
+        if r.status_code != 200:
+            return False
+
+        data = r.json()
+
+    except Exception:
+        return False
+
+    sections = data.get("parse", {}).get("sections", [])
+    if not sections:
+        return False
+
+    # 3) Check section
+    for s in sections:
+        name = s.get("line", "").lower()
+        print(name)
+        if "music video" in name:
+            return True
+    return False
+
+def imdb_clip_exists(artist_to_search: str, title_to_search: str) -> bool:
+
+    query = f"{artist_to_search} {title_to_search}"
+
+    url = (
+        "https://v2.sg.media-imdb.com/suggestion/t/"
+        + query.replace(" ", "%20")
+        + ".json"
+    )
+
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code != 200:
+        return False
+
+    data = response.json()
+
+    results = data.get("d", [])
+    for r in results:
+
+        title_text = (r.get("l") or "").lower()
+        #print(repr(artist_to_search.lower()))
+        #print(repr(title_text))
+        kind = (r.get("q") or "").lower()
+        #print(kind == "musicvideo")
+        #print(artist_to_search.lower() in title_text)
+
+        #should remove " " when looking into strings
+        if "musicvideo" in kind and artist_to_search.lower() in title_text:# and title_to_search.lower() in title_text :
+            return True
+
+    return False
+
+#print(imdb_clip_exists("bigflo & oli", "Dommage"))
 
 def get_youtube_video_url(
-        artist: str,
-        title: str
+        artist_ytb: str,
+        title_ytb: str,
+        country: str
 ) -> str | None:
-    query = f"{artist} - {title} official video"
+    query = f"{artist_ytb} - {title_ytb} official video"
 
     ydl_opts = {
         "quiet": True,
-        "extract_flat": True,
+        "extract_flat": False,
         "skip_download": True,
     }
 
-    with YoutubeDL(ydl_opts) as ydl:
+    # with YoutubeDL(ydl_opts) as ydl:
+    #
+    #     results = ydl.extract_info(
+    #         f"ytsearch5:{query}",
+    #         download=False
+    #     )
+    #
+    #     entries = results.get("entries", [])
 
-        results = ydl.extract_info(
-            f"ytsearch5:{query}",
-            download=False
-        )
+    with YoutubeDL({
+        "quiet": True,
+        "skip_download": True,
+        "extract_flat": True,  # 👈 évite résolution des vidéos
+    }) as ydl:
 
+        results = ydl.extract_info(f"ytsearch5:{query}", download=False)
         entries = results.get("entries", [])
 
         if not entries:
@@ -332,17 +525,31 @@ def get_youtube_video_url(
 
         video = entries[0]
         #usual tags for an official video
-        if "official" and "video" in video["title"].lower():
+        if "official" in video["title"].lower() and "video" in video["title"].lower() and "audio" not in video["title"].lower():
             return f"https://www.youtube.com/watch?v={video['id']}"
 
         # or "clip officiel" for my frenchies
-        elif "officiel" and "clip" in video["title"].lower():
+        elif "officiel" in video["title"].lower() and "clip" in video["title"].lower() and "audio" not in video["title"].lower():
             return f"https://www.youtube.com/watch?v={video['id']}"
 
-        else: #apparently no official video
-            return None
+        else: #apparently no official video, we'll ask AI or wiki
+
+            #If the song has a section video in wikipedia, then it has an officiel music video
+            if country == "FR" or country == "BE":
+                is_video = imdb_clip_exists(artist_ytb, title_ytb)
+                print(is_video)
+            else: #english
+                is_video = has_music_video_section(artist_ytb, title_ytb)
+
+            if is_video:
+                #we'll consider that the first ytb search return the right url
+                return f"https://www.youtube.com/watch?v={video['id']}"
+            else:
+                return None
+
 
 def download_youtube_video(
+        track_id: int,
         youtube_url: str,
         video_path: str,
         start_time: int,
@@ -366,6 +573,10 @@ def download_youtube_video(
     Returns
     -------
     """
+    #if video is already downloaded, exit
+    if os.path.exists(video_path):
+        return
+
     temp_dir = tempfile.mkdtemp()
 
     try:
@@ -390,16 +601,35 @@ def download_youtube_video(
     finally: #delete tempfile
         shutil.rmtree(temp_dir, ignore_errors=True)
 
+    # Update database
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE tracks SET video_path = ? WHERE deezer_id = ?",
+                   (str(video_path), track_id))
+    conn.commit()
+    conn.close()
+
 
 def download_all_youtube_videos():
-    #for title - artist in db:
-    #get url and write file in video_path in db (ADD)
-    #if none ask ai and write file in video_path in db (ADD)
-    #else add null or do nothing because its already at null ?
     conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT title, artist, country, deezer_id FROM tracks WHERE video_path IS NULL")
+    rows = cursor.fetchall()
+    conn.close()
+
+    start_time, end_time = 60, 75 #default
+    for row in rows:
+        title = row[0]
+        artist = row[1]
+        country = row[2]
+        track_id = row[3]
+        url = get_youtube_video_url(artist, title, country)
+        if url is not None:
+            video_path = BASE_DIR / "data" / "videos" / f"{track_id}.mp4"
+            download_youtube_video(track_id,url, video_path,start_time, end_time)
 
 
-if __name__ == "__main__":
-    url = get_youtube_video_url("Eagles", "Hotel California")
-    video_path ="C:/Users/chris/Desktop/Dev/blindtest-generator/output/test_dl_ytb_video.mp4"
-    download_youtube_video(url,video_path,60,65)
+artist_test = "Casseurs Flowters"
+title_test = "Inachevés"
+#print(has_music_video_section(artist, title, "FR"))
+#print(get_youtube_video_url(artist_test, title_test,"FR"))

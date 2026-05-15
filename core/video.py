@@ -178,16 +178,19 @@ def build_clip_with_video(
 
 def assemble_video(
         clips: list,
-        output_path: str
+        output_path: str,
+        fps: int = 24
 ) -> None :
     """Assemble a list of different clips to make a video
 
     Parameters
     ----------
     clips : list
-        a list of clips built by buil_clips
+        a list of clips built by build_clips
     output_path : str
         the path to the output video file
+    fps : int
+        frames per second
 
     Returns
     -------
@@ -196,5 +199,5 @@ def assemble_video(
     print(output_path)
     print(type(output_path))
     final = concatenate_videoclips(clips)
-    final.write_videofile(str(BASE_DIR / output_path), fps=24)
+    final.write_videofile(str(BASE_DIR / output_path), fps=fps)
 

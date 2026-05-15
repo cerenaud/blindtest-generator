@@ -81,8 +81,11 @@ class AudioTrack:
         instance.year = db_row[5]
         instance.popularity = db_row[6]
         instance.duration = db_row[7]
-        instance.path = Path(db_row[8])
-        instance.album_cover_path = db_row[10]
+        instance.country = db_row[8]
+        instance.path = Path(db_row[9])
+        #skip album_url
+        instance.album_cover_path = db_row[11]
+        instance.video_path = db_row[12]
         try:
             instance.audio = AudioSegment.from_mp3(instance.path)
             instance.total_duration = len(instance.audio)
