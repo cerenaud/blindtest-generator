@@ -576,7 +576,6 @@ def get_youtube_video_url(
             #If the song has a section video in wikipedia, then it has an officiel music video
             if country == "FR" or country == "BE":
                 is_video = imdb_clip_exists(artist_ytb, title_ytb)
-                print(is_video)
             else: #english
                 is_video = has_music_video_section(artist_ytb, title_ytb)
 
