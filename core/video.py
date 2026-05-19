@@ -1,10 +1,10 @@
 from moviepy import VideoClip, AudioFileClip, concatenate_videoclips, VideoFileClip, TextClip, CompositeVideoClip
 import numpy as np
-from numba.core.ir_utils import replace_vars
-
 from core.visuals import make_guessing_frame, make_reveal_frame
 from core.audio import AudioTrack, AudioSegment, BASE_DIR
 import tempfile
+from moviepy.video.fx import FadeIn, FadeOut
+from moviepy.audio.fx import AudioFadeIn, AudioFadeOut
 
 def build_clip(
         track: AudioTrack,
@@ -12,6 +12,10 @@ def build_clip(
         total_tracks: int,
         guessing_duration: int = 10,
         reveal_duration: int = 5,
+        video_fade_in: int = 1,
+        video_fade_out: int = 1,
+        audio_fade_in: int = 1,
+        audio_fade_out: int=2
 ) -> tuple[VideoClip,str] :
     """Create a clip for a given song (from an AudioTrack object). A clip is composed of
     different frame to guess a song (usually about 10 seconds) and a reveal frame showing
@@ -29,6 +33,14 @@ def build_clip(
             Duration in s of the guessing frame
         reveal_duration : int
             Duration in s of the reveal frame
+        video_fade_in: int
+            duration (in s) to fade into the video clip
+        video_fade_out: int
+            duration (in s) to fade out of the video clip
+        audio_fade_in: int
+            duration (in s) of the fade in of the audio
+        audio_fade_out
+            duration (in s) of the fade ou of the audio
 
         Returns
         -------
@@ -72,7 +84,17 @@ def build_clip(
     reveal_clip = VideoClip(make_reveal_frame_to_numpy, duration=reveal_duration)
 
     final_clip = concatenate_videoclips([guessing_clip, reveal_clip])
-    final_clip = final_clip.with_audio(audio_clip)
+
+    final_clip = final_clip.with_effects([
+        FadeIn(video_fade_in),
+        FadeOut(video_fade_out)
+    ])
+
+    final_clip = final_clip.with_audio(audio_clip).with_effects([
+        AudioFadeIn(audio_fade_in),
+        AudioFadeOut(audio_fade_out)
+    ])
+    #final_clip = final_clip.with_audio(audio_clip)
 
     return final_clip, tmp.name
 
@@ -83,6 +105,10 @@ def build_clip_with_video(
         video_path: str,
         guessing_duration: int = 10,
         reveal_duration: int = 5,
+        video_fade_in: int = 1,
+        video_fade_out: int = 1,
+        audio_fade_in: int = 1,
+        audio_fade_out: int=2
 ) -> tuple[VideoClip,str] :
     """Create a clip for a given song (from an AudioTrack object). A clip is composed of
     different frame to guess a song (usually about 10 seconds) and a reveal frame showing
@@ -103,6 +129,15 @@ def build_clip_with_video(
             Duration in s of the guessing frame
         reveal_duration : int
             Duration in s of the reveal frame
+        video_fade_in: int
+            duration (in s) to fade into the video clip
+        video_fade_out: int
+            duration (in s) to fade out of the video clip
+        audio_fade_in: int
+            duration (in s) of the fade in of the audio
+        audio_fade_out
+            duration (in s) of the fade ou of the audio
+
 
         Returns
         -------
@@ -171,7 +206,16 @@ def build_clip_with_video(
     #compose because we have a numpy videoclip (guessingg_clip) and a videofileclip (reveal_video)
     #TODO: add a transition clip with the parameter "transition"
     final_clip = concatenate_videoclips([guessing_clip, reveal_video],method="compose")
-    final_clip = final_clip.with_audio(audio_clip)
+    #final_clip = final_clip.with_audio(audio_clip)
+    final_clip = final_clip.with_effects([
+        FadeIn(video_fade_in),
+        FadeOut(video_fade_out)
+    ])
+
+    final_clip = final_clip.with_audio(audio_clip).with_effects([
+        AudioFadeIn(audio_fade_in),
+        AudioFadeOut(audio_fade_out)
+    ])
 
     return final_clip, tmp.name
 
