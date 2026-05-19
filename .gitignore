@@ -214,6 +214,11 @@ data/blindtest.db
 sandbox.py
 output/
 >>>>>>> feat/music-database
-data/covers
-data/music
-data/videos
+data/covers/*
+!data/covers/.gitkeep
+
+data/music/*
+!data/music/.gitkeep
+
+data/videos/*
+!data/videos/.gitkeep
