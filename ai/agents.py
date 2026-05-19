@@ -22,8 +22,22 @@ class Songs(BaseModel):
 class SongsOutput(BaseModel):
     songs: List[Songs] = Field(description="Liste des chansons")
 
-def correct_release_year(data: dict)  :
-    # Création du model LangChain OpenAI chat
+def correct_release_year(
+        data: dict
+) -> dict  :
+    """Give an agent a dict with song title, artist and a wrong release year to correct.
+
+        Parameters
+        ----------
+         data: dict
+            a dict with song title, artist and release year to correct
+
+        Returns
+        -------
+        dict
+            The corrected dict with right release year
+    """
+
     model = ChatOpenAI(
         model_name="gpt-4o-mini",
         temperature=0,
@@ -47,17 +61,35 @@ def correct_release_year(data: dict)  :
         "input": json.dumps(data)
     })
 
+#The following are different agent to ask if there is an official video
+#known for any songs, and also ask the url if it exists.
+#However, it hallucinates too much and gives wrong answers and urls.
+#I'll keep theses differeents functions, maybe one day i could make it works, with premium ai model maybe
 
-#this approach doesn't seems to work because these models can't give
-#the right url
 class YoutubeClipOutput(BaseModel):
     youtube_url: Optional[str] = Field(
         description="Lien YouTube du clip officiel s'il existe, sinon None"
     )
 
-def is_youtube_video(title: str, artist: str):
-    #ask ai to know if there is a clip else return null/none
-    # Création du model LangChain OpenAI chat
+def is_youtube_video(
+        title: str,
+        artist: str
+)-> YoutubeClipOutput | None:
+    """Ask AI to know if there is a official youtube video for a song else return None
+
+        Parameters
+        ----------
+         title: str
+            name of the song
+        artist: str
+            name of the artist
+
+        Returns
+        -------
+        YoutubeClipOutput | None
+            url to the video or None
+    """
+
     model = ChatOpenAI(
         #model_name="gpt-4o-mini",
         model="gpt-5.3-codex",
@@ -85,15 +117,32 @@ def is_youtube_video(title: str, artist: str):
 
     return result.youtube_url
 
-# test = is_youtube_video("All alone","Gorillaz")
-# print(test)
 
-#We'll give direectly the url (fetched from yt-dlp) and ask if it is officle or relevant
+#We'll give direectly the url (fetched from yt-dlp) and ask if it is official or relevant
 class IsYoutubeClipOutput(BaseModel):
     answer: str = Field(description="Réponse s'il existe un clip video")
 
-def is_youtube_video_from_url(title: str, artist: str, url: str):
-   # Création du model LangChain OpenAI chat
+def is_youtube_video_from_url(
+        title: str,
+        artist: str,
+        url: str
+)-> IsYoutubeClipOutput:
+    """Ask AI if the given url is the official video for a song.
+
+            Parameters
+            ----------
+             title: str
+                name of the song
+            artist: str
+                name of the artist
+            url: str
+                link to the youtube video
+
+            Returns
+            -------
+            IsYoutubeClipOutput
+                Yes or No
+        """
     model = ChatOpenAI(
         model_name="gpt-4o-mini",
         temperature=0,
@@ -120,16 +169,31 @@ def is_youtube_video_from_url(title: str, artist: str, url: str):
     })
 
     return result.answer
-#rl = "https://www.youtube.com/watch?v=n3_4pMFUctA"
-# test = is_youtube_video_from_url("Hotel California","Eagles",url)
-# print(test)
+
 
 class ClipValidationOutput(BaseModel):
     is_official: bool = Field(
         description="True si cette vidéo correspond à un clip officiel ou vidéo officielle pertinente"
     )
 
-def is_official_clip(song_title: str, artist: str) -> bool:
+def is_official_clip(
+        song_title: str,
+        artist: str
+) -> bool:
+    """Ask AI if there is an official video for a song.
+
+        Parameters
+        ----------
+         song_title: str
+            name of the song
+        artist: str
+            name of the artist
+
+
+        Returns
+        -------
+        bool
+        """
     model = ChatOpenAI(
         model_name="gpt-4o-mini",
         temperature=0
@@ -146,9 +210,9 @@ def is_official_clip(song_title: str, artist: str) -> bool:
         (
             "human",
             """Chanson:
-Titre: {song_title}
-Artiste: {artist}
-"""
+    Titre: {song_title}
+    Artiste: {artist}
+    """
         )
     ])
 
@@ -160,25 +224,3 @@ Artiste: {artist}
     })
 
     return result.is_official
-
-#print(is_official_clip("All alone", "Gorillaz"))
-
-from openai import OpenAI
-client = OpenAI(api_key=openai_api_key)
-#oracle
-def check_clip(artist, song):
-    prompt = f"""
-    Existe-t-il un clip officiel pour la chanson "{song}" de {artist} ?
-    Réponds uniquement par OUI si et seulement si il existe un clip officiel sinon NON.
-    """
-
-    response = client.responses.create(
-        model="gpt-5.3-codex",
-        input=prompt
-    )
-
-    return response.output[0].content[0].text
-
-
-#print(check_clip("Vald", "Rocking chair"))
-#peut etre comparé le lien qu'il fournit

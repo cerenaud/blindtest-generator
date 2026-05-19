@@ -1,16 +1,13 @@
 import os
 import sqlite3
 from pathlib import Path
-
 from moviepy import VideoFileClip
-
 from ai.agents import correct_release_year, is_official_clip
 from core.audio import BASE_DIR
 import requests
 from yt_dlp import YoutubeDL
 import tempfile
 import shutil
-from langdetect import detect
 
 DB_PATH = BASE_DIR / "data" / "blindtest.db"
 
@@ -302,6 +299,8 @@ def download_preview(
 
 
 def download_all_previews():
+    """download every preview from deezer for every song in the db using download_preview().
+    """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT deezer_id FROM tracks WHERE preview_path IS NULL")
@@ -317,7 +316,20 @@ def download_album_cover(
     url: str,
     track_id: int
 ) -> str | None:
+    """Download the album cover (.jpg) from deezer.
 
+        Parameters
+        ----------
+         url: str
+            link to the album cover image.
+        track_id : int
+            deezer id of the song
+
+        Returns
+        -------
+        str | None
+            Return the path to the album cover image.
+    """
     response = requests.get(url)
     # if response.status_code != 200 or len(response.content) < 1000:
     #     print(f"Skipping {track_id} - failed response")
@@ -337,6 +349,8 @@ def download_album_cover(
     return str(cover_path)
 
 def download_all_album_covers():
+    """download every album cover from deezer for every song in the db using download_album_cover() and write in db.
+    """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT deezer_id, album_cover_url FROM tracks WHERE album_cover_path IS NULL")
@@ -371,14 +385,29 @@ def clean_db():
 
 
 #MUSIC SEARCH
-def has_music_video_section(artist, title) -> bool:
-#will search wikipedia, if the song has its own page, it will look for "music video" section
-#which is always there if the video exists. If not, return False.
-#If the song doesn't have its page its likely that there is not a video for the song.
-# The search  will return probably a page of thee artist,
-#or a list of song or a related page to the artist but it will then not have
-#music video in it, so it will return False.
+def has_music_video_section(
+        artist : str,
+        title : str
+) -> bool:
+    """will search wikipedia, if the song has its own page, it will look for "music video" section
+    which is always there if the video exists. If not, return False.
+    If the song doesn't have its page its likely that there is not a video for the song.
+    The search  will return probably a page of the artist,
+    or a list of song or a related page to the artist but it will then not have
+    music video in it, so it will return False.
 
+    Parameters
+    ----------
+    artist : str
+        name of the artist.
+    title : str
+        name of the song.
+
+    Returns
+    -------
+    bool
+        A boolean indicating whether the song has a video section on its wikipedia page.
+    """
     base_url = f"https://en.wikipedia.org/w/api.php"
 
     headers = {
@@ -414,9 +443,8 @@ def has_music_video_section(artist, title) -> bool:
         return False
 
     page_title = search_results[0]["title"]
-    print(title)
 
-    # 2) Get sections
+    #Get sections
     try:
         r = requests.get(
             base_url,
@@ -442,16 +470,33 @@ def has_music_video_section(artist, title) -> bool:
     if not sections:
         return False
 
-    # 3) Check section
+    #search in sections
     for s in sections:
         name = s.get("line", "").lower()
-        print(name)
         if "music video" in name:
             return True
     return False
 
-def imdb_clip_exists(artist_to_search: str, title_to_search: str) -> bool:
+def imdb_clip_exists(
+        artist_to_search: str,
+        title_to_search: str
+) -> bool:
+    """will search imdb with {artist} - {tile} and check if the first results has the
+    mention "music video". More consistent than searching wikipedia for french music,
+    but might be better also to look imdb for english or every other music.
 
+    Parameters
+    ----------
+    artist_to_search : str
+        name of the artist.
+    title_to_search : str
+        name of the song.
+
+    Returns
+    -------
+    bool
+        A boolean indicating whether the song has a video section on its imdb page.
+    """
     query = f"{artist_to_search} {title_to_search}"
 
     url = (
@@ -475,19 +520,13 @@ def imdb_clip_exists(artist_to_search: str, title_to_search: str) -> bool:
     for r in results:
 
         title_text = (r.get("l") or "").lower()
-        #print(repr(artist_to_search.lower()))
-        #print(repr(title_text))
         kind = (r.get("q") or "").lower()
-        #print(kind == "musicvideo")
-        #print(artist_to_search.lower() in title_text)
 
         #should remove " " when looking into strings
         if "musicvideo" in kind and artist_to_search.lower() in title_text:# and title_to_search.lower() in title_text :
             return True
 
     return False
-
-#print(imdb_clip_exists("bigflo & oli", "Dommage"))
 
 def get_youtube_video_url(
         artist_ytb: str,
@@ -561,7 +600,9 @@ def download_youtube_video(
 
     Parameters
     ----------
-     youtube_url: str
+    track_id : int
+        deezer id of the track.
+    youtube_url: str
         url of the YouTube video to download
     video_path: str
         path to save the video.
@@ -611,6 +652,8 @@ def download_youtube_video(
 
 
 def download_all_youtube_videos():
+    """download every official youtube video for every song in the db using download_youtube_video() and write in db.
+    """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute("SELECT title, artist, country, deezer_id FROM tracks WHERE video_path IS NULL")
@@ -628,8 +671,3 @@ def download_all_youtube_videos():
             video_path = BASE_DIR / "data" / "videos" / f"{track_id}.mp4"
             download_youtube_video(track_id,url, video_path,start_time, end_time)
 
-
-artist_test = "Casseurs Flowters"
-title_test = "Inachevés"
-#print(has_music_video_section(artist, title, "FR"))
-#print(get_youtube_video_url(artist_test, title_test,"FR"))
