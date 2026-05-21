@@ -222,3 +222,6 @@ data/music/*
 
 data/videos/*
 !data/videos/.gitkeep
+
+data/backgrounds/*
+!data/backgrounds/.gitkeep

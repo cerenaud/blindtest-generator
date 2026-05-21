@@ -1,7 +1,7 @@
 from core.database import clean_db
 from core.database import get_tracks
 from core.audio import AudioTrack, AudioSegment, BASE_DIR
-from core.video import build_clip, assemble_video, build_clip_with_video
+from core.video import *
 
 
 def generate_blindtest(
@@ -53,10 +53,10 @@ def generate_blindtest(
         # will need to choose, use build_clip_with_video only if the clip exist, else use build_clip to use album cover
         if track.video_path is not None:
             video_path = track.video_path
-            clip, tmp = build_clip_with_video(track, track_number_counter, nb_tracks, video_path, guessing_duration,
+            clip, tmp = build_clip_with_video_and_background(track, track_number_counter, nb_tracks, video_path, guessing_duration,
                                               reveal_duration)
         else:
-            clip, tmp = build_clip(track, track_number_counter, nb_tracks, guessing_duration, reveal_duration)
+            clip, tmp = build_clip_with_background(track, track_number_counter, nb_tracks, guessing_duration, reveal_duration)
 
         clips.append(clip)
         track_number_counter += 1
