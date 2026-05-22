@@ -225,6 +225,8 @@ def build_clip_with_background(
         track: AudioTrack,
         track_number: int,
         total_tracks: int,
+        guessing_background: str,
+        reveal_background: str,
         guessing_duration: int = 10,
         reveal_duration: int = 5,
         video_fade_in: int = 1,
@@ -244,6 +246,10 @@ def build_clip_with_background(
             Index of the current track in the blindtest.
         total_tracks
             Total number of tracks in the blindtest.
+        guessing_background: str
+            path to the background video for the guessing part.
+        reveal_background: str
+            path to the background video for the reveal part
         guessing_duration : int
             Duration in s of the guessing frame
         reveal_duration : int
@@ -268,41 +274,9 @@ def build_clip_with_background(
     excerpt.export(tmp.name, format="mp3")
     tmp.close()
 
-    def make_guessing_frame_to_numpy(
-            t : int
-    ) -> np.ndarray :
-        """Convert a frame to a numpy array for moviepy to create a video clip with
-        different arrays
-
-        Parameters
-        ----------
-        t : int
-            time of the remaining countdown.
-
-        Returns
-        -------
-        np.array
-            A np.array of the guessing frame
-        """
-        countdown = guessing_duration - int(t)
-        frame = make_guessing_frame(countdown, track_number, total_tracks)
-        return np.array(frame)
-
-    def make_reveal_frame_to_numpy(_) -> np.ndarray:
-        frame = make_reveal_frame(track.artist, track.title, track.album_cover_path)
-        return np.array(frame)
-
-    # guessing_clip = VideoClip(make_guessing_frame_to_numpy, duration=guessing_duration)
-    # audio_clip = AudioFileClip(tmp.name)
-    # guessing_clip = guessing_clip.with_audio(audio_clip)
-
-    background = (
-        VideoFileClip("data/backgrounds/turntable_25fps.mp4")
-        .with_effects([Loop(duration=guessing_duration)])
-        .resized((1920, 1080))
-    )
-
     def make_frame(t):
+        """function to display countdown and track number on the background video
+        """
         remaining = max(0, guessing_duration - int(t))
 
         width = 1920
@@ -349,11 +323,19 @@ def build_clip_with_background(
         duration=guessing_duration
     )
 
-    # effet pulse
+    background = ( #background video
+        VideoFileClip(guessing_background)
+        .with_effects([Loop(duration=guessing_duration)])
+        .resized((1920, 1080))
+    )
+
+
+    #pulse effect
     # countdown = countdown.resized(
     #     lambda t: 1 + 0.05 * np.sin(t * 6)
     # )
 
+    #Progress bar
     bar_width = 1400
     bar_height = 20
     bar_x = 260
@@ -364,7 +346,6 @@ def build_clip_with_background(
         color=(255, 255, 255)
     )
 
-    # largeur dynamique
     progress = progress.resized(
         lambda t: (
             max(1, int(bar_width * (1 - t / guessing_duration))),
@@ -372,7 +353,7 @@ def build_clip_with_background(
         )
     )
 
-    # position dynamique pour garder l'ancrage à droite
+    #right anchor
     progress = progress.with_position(
         lambda t: (
             bar_x + bar_width - max(1, int(bar_width * (1 - t / guessing_duration))),
@@ -385,6 +366,7 @@ def build_clip_with_background(
         color=(10, 10, 10)
     ).with_position((260, 1000))
 
+    #guessing clip with the backgground video, coutwdown and progress bar
     guessing_clip = CompositeVideoClip([
         background,
         countdown,
@@ -397,7 +379,7 @@ def build_clip_with_background(
 
     #reveal clip
     background_reveal = (
-        VideoFileClip("data/backgrounds/equalizer_30fps.mp4")
+        VideoFileClip(reveal_background)
         .with_effects([Loop(duration=reveal_duration)])
         .resized((1920, 1080))
     )
@@ -445,7 +427,7 @@ def build_clip_with_background(
         txt_clip
     ])
 
-
+    #Final clip
     final_clip = concatenate_videoclips([guessing_clip, reveal_clip])
 
     final_clip = final_clip.with_effects([
@@ -457,7 +439,6 @@ def build_clip_with_background(
         AudioFadeIn(audio_fade_in),
         AudioFadeOut(audio_fade_out)
     ])
-    #final_clip = final_clip.with_audio(audio_clip)
 
     return final_clip, tmp.name
 
@@ -466,6 +447,7 @@ def build_clip_with_video_and_background(
         track_number: int,
         total_tracks: int,
         video_path: str,
+        guessing_background: str,
         guessing_duration: int = 10,
         reveal_duration: int = 5,
         video_fade_in: int = 1,
@@ -488,6 +470,8 @@ def build_clip_with_video_and_background(
             Total number of tracks in the blindtest.
         video_path: str
             path to official video clip of the song
+        guessing_background: str
+            path to the background video for the guessing part
         guessing_duration : int
             Duration in s of the guessing frame
         reveal_duration : int
@@ -513,70 +497,15 @@ def build_clip_with_video_and_background(
     excerpt.export(tmp.name, format="mp3")
     tmp.close()
 
-    def make_guessing_frame_to_numpy(
-            t : int
-    ) -> np.ndarray :
-        """Convert a frame to a numpy array for moviepy to create a video clip with
-        different arrays
-
-        Parameters
-        ----------
-        t : int
-            time of the remaining countdown.
-
-        Returns
-        -------
-        np.array
-            A np.array of the guessing frame
-        """
-        countdown = guessing_duration - int(t)
-        frame = make_guessing_frame(countdown, track_number, total_tracks)
-        return np.array(frame)
-
-    #guessing_clip = VideoClip(make_guessing_frame_to_numpy, duration=guessing_duration)
     background = (
-        VideoFileClip("data/backgrounds/turntable_25fps.mp4")
+        VideoFileClip(guessing_background)
         .with_effects([Loop(duration=guessing_duration)])
         .resized((1920, 1080))
     )
 
-    def make_countdown_frame(t):
-        remaining = max(0, guessing_duration - int(t))
-
-        # txt = TextClip(
-        #     text=str(remaining),
-        #     font="arial",
-        #     font_size=250,
-        #     color="white",
-        #     method="label",
-        #     # stroke_color="cyan",
-        #     # stroke_width=8,
-        #     transparent = True
-        # ).with_duration(0.04)
-
-        return TextClip(
-            text=str(remaining),
-            font="arial",
-            font_size=250,
-            color="white",
-            stroke_color="cyan",
-            stroke_width=8,
-            method="label",
-            size=(400, 400)
-        ).get_frame(0)
-
     def make_frame(t):
-        remaining = max(0, guessing_duration - int(t))
-
-        img = Image.new("RGBA", (800, 400), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(img)
-
-        font = ImageFont.truetype("arial.ttf", 250)
-        draw.text((960, 540), str(remaining), font=font, fill=(255, 255, 255, 255))
-
-        return np.array(img)
-
-    def make_frame(t):
+        """function to display countdown and track number on the background video
+        """
         remaining = max(0, guessing_duration - int(t))
 
         width = 1920
@@ -589,13 +518,11 @@ def build_clip_with_video_and_background(
 
         text = str(remaining)
 
-        # taille réelle du texte
         bbox = draw.textbbox((0, 0), text, font=font)
 
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
 
-        # coordonnées centrées
         x = (width - text_width) / 2
         y = (height - text_height) / 2 - height * 0.1
 
@@ -623,11 +550,12 @@ def build_clip_with_video_and_background(
         duration=guessing_duration
     )
 
-    # effet pulse
+    #pulse effect
     # countdown = countdown.resized(
     #     lambda t: 1 + 0.05 * np.sin(t * 6)
     # )
 
+    #progress bar
     bar_width = 1400
     bar_height = 20
     bar_x = 260
@@ -638,7 +566,6 @@ def build_clip_with_video_and_background(
         color=(255, 255, 255)
     )
 
-    # largeur dynamique
     progress = progress.resized(
         lambda t: (
             max(1, int(bar_width * (1 - t / guessing_duration))),
@@ -646,7 +573,6 @@ def build_clip_with_video_and_background(
         )
     )
 
-    # position dynamique pour garder l'ancrage à droite
     progress = progress.with_position(
         lambda t: (
             bar_x + bar_width - max(1, int(bar_width * (1 - t / guessing_duration))),
@@ -659,14 +585,13 @@ def build_clip_with_video_and_background(
         color=(10, 10, 10)
     ).with_position((260, 1000))
 
+    #guessing clip
     guessing_clip = CompositeVideoClip([
         background,
         countdown,
         background_bar,
         progress,
     ]).with_duration(guessing_duration)
-
-
 
     audio_clip = AudioFileClip(tmp.name)
     guessing_clip = guessing_clip.with_audio(audio_clip)
@@ -700,7 +625,6 @@ def build_clip_with_video_and_background(
 
     reveal_video = CompositeVideoClip([reveal_video,shadow, txt_clip])
 
-    #compose because we have a numpy videoclip (guessingg_clip) and a videofileclip (reveal_video)
     #TODO: add a transition clip with the parameter "transition"
     final_clip = concatenate_videoclips([guessing_clip, reveal_video],method="compose")
     #final_clip = final_clip.with_audio(audio_clip)
