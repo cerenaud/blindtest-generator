@@ -61,7 +61,8 @@ def generate_blindtest(
         clips.append(clip)
         track_number_counter += 1
 
-
-    assemble_video(clips, output_path)
+    intro_path = "data/backgrounds/soft_flow_pastel_30fps.mp4"
+    intro = build_intro(10,intro_path)
+    assemble_video(intro,clips, output_path)
     return output_path
 

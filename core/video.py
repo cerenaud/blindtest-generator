@@ -640,7 +640,59 @@ def build_clip_with_video_and_background(
 
     return final_clip, tmp.name
 
+def build_intro(
+        intro_duration: int,
+        background_video: str
+) -> VideoClip:
+    """Build an intro video"""
+
+
+    background = (
+        VideoFileClip(background_video)
+        .with_effects([Loop(duration=intro_duration)])
+        #.resized((1920, 1080))
+    )
+
+    overlay = ColorClip( #darken background
+        size=(1920, 1080),
+        color=(0, 0, 0)
+    ).with_opacity(0.4).with_duration(intro_duration)
+
+    title = TextClip(
+        text="BLINDTEST",
+        font="arial",
+        font_size=140,
+        color="white",
+        method="label",
+        size=(1600,300)
+    ).with_position(("center", 250)).with_start(0.5).with_duration(5)
+
+    subtitle = TextClip(
+        text="Toutes générations...",
+        font="arial",
+        font_size=60,
+        color="white",
+        method="label",
+    size = (1600, 300)
+    ).with_position(("center", 450)).with_start(1.8).with_duration(4)
+
+    title = title.with_effects([FadeIn(0.5)])
+    subtitle = subtitle.with_effects([FadeIn(0.5)])
+    #logo = logo.fadein(0.5)
+
+    intro = CompositeVideoClip([
+        background,
+        overlay,
+        title,
+        subtitle,
+    ]).with_duration(intro_duration)
+
+    intro = intro.with_effects([FadeOut(1)])
+
+    return intro
+
 def assemble_video(
+        intro: VideoClip,
         clips: list,
         output_path: str,
         fps: int = 24
@@ -662,6 +714,9 @@ def assemble_video(
     """
     print(output_path)
     print(type(output_path))
-    final = concatenate_videoclips(clips)
+    #final = concatenate_videoclips(clips)
+    final = concatenate_videoclips([intro,
+                                    *clips],
+                                   method="compose")
     final.write_videofile(str(BASE_DIR / output_path), fps=fps)
 
