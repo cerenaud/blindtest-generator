@@ -642,7 +642,8 @@ def build_clip_with_video_and_background(
 
 def build_intro(
         intro_duration: int,
-        background_video: str
+        background_video: str,
+        intro_text: str
 ) -> VideoClip:
     """Build an intro video"""
 
@@ -664,27 +665,47 @@ def build_intro(
         font_size=140,
         color="white",
         method="label",
-        size=(1600,300)
+        size=(1600,150)
     ).with_position(("center", 250)).with_start(0.5).with_duration(5)
 
     subtitle = TextClip(
-        text="Toutes générations...",
+        text=intro_text,
         font="arial",
         font_size=60,
         color="white",
         method="label",
-    size = (1600, 300)
-    ).with_position(("center", 450)).with_start(1.8).with_duration(4)
+    size = (1600, 200)
+    ).with_position(("center", 450)).with_start(1.5).with_duration(4)
 
-    title = title.with_effects([FadeIn(0.5)])
-    subtitle = subtitle.with_effects([FadeIn(0.5)])
-    #logo = logo.fadein(0.5)
+    logo = (
+        ImageClip("data/backgrounds/logo_v1.PNG")
+        .resized(height=350)
+        .with_position(("center", 550))
+        .with_start(1.5)
+        .with_duration(4)
+    )
+
+    title = title.with_effects([FadeIn(0.8)])
+    subtitle = subtitle.with_effects([FadeIn(0.8)])
+    logo = logo.with_effects([FadeIn(0.8)])
+
+    lets_go_text = TextClip(
+        text="C'est partit !",
+        font="arial",
+        font_size=140,
+        color="white",
+        method="label",
+        size=(1600, 200)
+    ).with_position("center").with_start(6).with_duration(2)
+    lets_go_text = lets_go_text.with_effects([FadeIn(0.8)])
 
     intro = CompositeVideoClip([
         background,
         overlay,
         title,
         subtitle,
+        logo,
+        lets_go_text
     ]).with_duration(intro_duration)
 
     intro = intro.with_effects([FadeOut(1)])
