@@ -643,15 +643,32 @@ def build_clip_with_video_and_background(
 def build_intro(
         intro_duration: int,
         background_video: str,
-        intro_text: str
+        intro_text: str,
+        song_path: str,
 ) -> VideoClip:
-    """Build an intro video"""
+    """Build an intro video
 
+    Parameters
+    ----------
+    intro_duration: int
+        duration of the intro video.
+    background_video: str
+        background video for the intro
+    intro_text: str
+        intro text to describe the blindtest.
+    song_path: str
+        path to the song playing in the intro video.
+
+    Returns
+    -------
+    VideoClip
+        A video clip for the intro
+    """
 
     background = (
         VideoFileClip(background_video)
         .with_effects([Loop(duration=intro_duration)])
-        #.resized((1920, 1080))
+        .resized((1920, 1080))
     )
 
     overlay = ColorClip( #darken background
@@ -710,9 +727,93 @@ def build_intro(
 
     intro = intro.with_effects([FadeOut(1)])
 
+    audio = AudioFileClip(song_path)
+    intro = intro.with_audio(audio)
+
+    intro = intro.with_audio(audio).with_effects([
+        AudioFadeIn(1),
+        AudioFadeOut(1)
+    ]).with_duration(intro_duration)
+
     return intro
+
+def build_outro(
+        outro_duration: int,
+        background_video: str,
+        song_path: str,
+) -> VideoClip:
+    """Build an intro video
+
+    Parameters
+    ----------
+    outro_duration: int
+        duration of the outro video.
+    background_video: str
+        background video for the outro
+    song_path: str
+        path to the song playing in the outro video.
+
+    Returns
+    -------
+    VideoClip
+        A video clip for the outro
+    """
+
+
+    background = (
+        VideoFileClip(background_video)
+        .with_effects([Loop(duration=outro_duration)])
+        .resized((1920, 1080))
+    )
+
+    overlay = ColorClip( #darken background
+        size=(1920, 1080),
+        color=(0, 0, 0)
+    ).with_opacity(0.4).with_duration(outro_duration)
+
+    text = TextClip(
+        text="MERCI D'AVOIR REGARDE !",
+        font="arial",
+        font_size=100,
+        color="white",
+        method="label",
+        size=(1600,150)
+    ).with_position(("center", 250)).with_start(0.5).with_duration(5)
+
+    logo = (
+        ImageClip("data/backgrounds/logo_v1.PNG")
+        .resized(height=350)
+        .with_position(("center", 550))
+        .with_start(1.5)
+        .with_duration(4)
+    )
+
+    text = text.with_effects([FadeIn(0.8)])
+    logo = logo.with_effects([FadeIn(0.8)])
+
+
+    outro = CompositeVideoClip([
+        background,
+        overlay,
+        text,
+        logo
+    ]).with_duration(outro_duration)
+
+    outro = outro.with_effects([FadeOut(1)])
+
+    audio = AudioFileClip(song_path)
+    audio = audio.subclipped(2, audio.duration)
+
+    outro = outro.with_audio(audio).with_effects([
+        AudioFadeIn(1),
+        AudioFadeOut(1)
+    ]).with_duration(outro_duration)
+
+    return outro
+
 def assemble_video(
         intro: VideoClip,
+        outro: VideoClip,
         clips: list,
         output_path: str,
         fps: int = 24
@@ -721,6 +822,10 @@ def assemble_video(
 
     Parameters
     ----------
+    intro: VideoClip
+        intro video built by build_intro()
+    outro: VideoClip
+        outro video built by build_outro()
     clips : list
         a list of clips built by build_clips
     output_path : str
@@ -736,7 +841,8 @@ def assemble_video(
     print(type(output_path))
     #final = concatenate_videoclips(clips)
     final = concatenate_videoclips([intro,
-                                    *clips],
+                                    *clips,
+                                    outro],
                                    method="compose")
     final.write_videofile(str(BASE_DIR / output_path), fps=fps)
 

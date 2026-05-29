@@ -7,6 +7,11 @@ from core.video import *
 def generate_blindtest(
     music_folder: str,
     output_path: str,
+    intro_text: str,
+    intro_background: str,
+    intro_song: str,
+    outro_background: str,
+    outro_song: str,
     nb_tracks: int = 10,
     guessing_duration: int = 10,
     reveal_duration: int = 5,
@@ -23,6 +28,16 @@ def generate_blindtest(
         path where music files are located.
     output_path : str
         Path where the blindtest video will be saved.
+    intro_text : str
+        intro text to describe the blindtest.
+    intro_background: str
+        path to the background video for the intro.
+    intro_song: str
+        path to the song for the intro.
+    outro_background: str
+        path to the background video for the outro.
+    outro_song: str
+        path to the song for the outro.
     nb_tracks : int
         number of tracks of the blindtest.
     guessing_duration : int
@@ -61,8 +76,8 @@ def generate_blindtest(
         clips.append(clip)
         track_number_counter += 1
 
-    intro_path = "data/backgrounds/soft_flow_pastel_30fps.mp4"
-    intro = build_intro(10,intro_path)
-    assemble_video(intro,clips, output_path)
+    intro = build_intro(10,intro_background,intro_text,intro_song)
+    outro = build_outro(8, outro_background,outro_song)
+    assemble_video(intro,outro,clips, output_path)
     return output_path
 
