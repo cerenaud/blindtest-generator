@@ -1,13 +1,11 @@
 import base64
-from io import BytesIO
 from typing import Any
-
 from core.database import get_tracks
 from core.video import *
 from pydub import AudioSegment
 import json
 
-def generate_blindtest_audio(
+def generate_audio_blindtest(
     music_folder: str,
     output_path: str,
     nb_tracks: int = 10,
@@ -81,7 +79,7 @@ def generate_blindtest_audio(
     return blindtest, blindtest_info
 
 #ex
-# blindtest,blindtest_info = generate_blindtest_audio("data/music", "output/blindtest_audio.mp3", 3, 10, 5)
+# blindtest,blindtest_info = generate_audio_blindtest("data/music", "output/blindtest_audio.mp3", 3, 10, 5)
 # img_data = base64.b64decode(blindtest_info[0]["album_cover"])
 # img = Image.open(BytesIO(img_data))
 # img.show()
