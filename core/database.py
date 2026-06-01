@@ -668,5 +668,7 @@ def download_all_youtube_videos():
         url = get_youtube_video_url(artist, title, country)
         if url is not None:
             video_path = BASE_DIR / "data" / "videos" / f"{track_id}.mp4"
-            download_youtube_video(track_id,url, video_path,start_time, end_time)
-
+            try:
+                download_youtube_video(track_id,url, video_path,start_time, end_time)
+            except Exception as e:
+                pass

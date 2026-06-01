@@ -843,6 +843,6 @@ def assemble_video(
     final = concatenate_videoclips([intro,
                                     *clips,
                                     outro],
-                                   method="compose")
+                                   method="chain")
     final.write_videofile(str(BASE_DIR / output_path), fps=fps)
 
