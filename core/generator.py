@@ -3,6 +3,7 @@ from core.database import get_tracks
 from core.audio import AudioTrack, AudioSegment, BASE_DIR
 from core.video import *
 import gc
+from pathlib import Path
 
 def generate_blindtest(
     output_path: str,
@@ -95,38 +96,6 @@ def generate_blindtest_iterative(
     """Generate a blindtest video by generating every clip for every track and
     assemble at the end. This allows to create a blindtest with 30 or more tracks
     without exploding RAM with moviepy.
-
-    Parameters
-    ----------
-    output_path : str
-        Path where the blindtest video will be saved.
-    intro_text : str
-        intro text to describe the blindtest.
-    intro_background: str
-        path to the background video for the intro.
-    intro_song: str
-        path to the song for the intro.
-    outro_background: str
-        path to the background video for the outro.
-    outro_song: str
-        path to the song for the outro.
-    nb_tracks : int
-        number of tracks of the blindtest.
-    guessing_duration : int
-        duration of the guessing part for a song in the blindtest.
-    reveal_duration: int
-        duration of the reveal part for a song in the blindtest.
-    genre: str | list[str]
-        music genre of the blindtest. Could be one or more.
-    min_year: int:
-        minimum release year for a music to appear in the blindtest.
-    max_year: int:
-        maximum release year for a music to appear in the blindtest.
-
-    Returns
-    -------
-    output_path : str
-        :the path were the blindtest will be saved.
     """
     clean_db()
 
@@ -134,78 +103,93 @@ def generate_blindtest_iterative(
     guessing_background = "data/backgrounds/turntable_25fps.mp4"
     reveal_background = "data/backgrounds/vhs_particle_25fps.mp4"
 
+    tmp_dir = BASE_DIR / "data" / "tmp_blindtest"
+    tmp_dir.mkdir(parents=True, exist_ok=True)
+
     temp_files = []
+    clips = []
+    final = None
     track_number_counter = 1
 
-    #build intro
-    intro = build_intro(10, intro_background, intro_text, intro_song)
-    intro_path = "tmp_intro.mp4"
-    intro.write_videofile(intro_path, fps=25)
-    intro.close()
-    temp_files.append(intro_path)
+    try:
+        intro = build_intro(10, intro_background, intro_text, intro_song)
+        intro_path = tmp_dir / "tmp_intro.mp4"
+        intro.write_videofile(str(intro_path), fps=25)
+        intro.close()
+        temp_files.append(intro_path)
 
-    gc.collect()
-
-    #bulding every clip
-    for mp3 in mp3_files:
-
-        track = AudioTrack.from_db(mp3)
-
-        if track.video_path:
-            clip, tmp = build_clip_with_video_and_background(
-                track,
-                track_number_counter,
-                nb_tracks,
-                track.video_path,
-                guessing_background,
-                guessing_duration,
-                reveal_duration
-            )
-        else:
-            clip, tmp = build_clip_with_background(
-                track,
-                track_number_counter,
-                nb_tracks,
-                guessing_background,
-                reveal_background,
-                guessing_duration,
-                reveal_duration
-            )
-
-        tmp_path = f"tmp_track_{track_number_counter}.mp4"
-
-        clip.write_videofile(tmp_path, fps=25)
-
-        #cleanup
-        clip.close()
-        del clip
-        del track
         gc.collect()
 
+        for mp3 in mp3_files:
+            track = AudioTrack.from_db(mp3)
+
+            if track.video_path:
+                clip, tmp = build_clip_with_video_and_background(
+                    track,
+                    track_number_counter,
+                    nb_tracks,
+                    track.video_path,
+                    guessing_background,
+                    guessing_duration,
+                    reveal_duration
+                )
+            else:
+                clip, tmp = build_clip_with_background(
+                    track,
+                    track_number_counter,
+                    nb_tracks,
+                    guessing_background,
+                    reveal_background,
+                    guessing_duration,
+                    reveal_duration
+                )
+
+            tmp_path = tmp_dir / f"tmp_track_{track_number_counter}.mp4"
+            clip.write_videofile(str(tmp_path), fps=25)
+
+            clip.close()
+            del clip
+            del track
+            gc.collect()
+
+            try:
+                tmp.close()
+            except Exception:
+                pass
+
+            temp_files.append(tmp_path)
+            track_number_counter += 1
+
+        outro = build_outro(8, outro_background, outro_song)
+        outro_path = tmp_dir / "tmp_outro.mp4"
+        outro.write_videofile(str(outro_path), fps=25)
+        outro.close()
+        temp_files.append(outro_path)
+
+        gc.collect()
+
+        clips = [VideoFileClip(str(p)) for p in temp_files]
+        final = concatenate_videoclips(clips, method="chain")
+        final.write_videofile(str(BASE_DIR / output_path), fps=25)
+
+        return output_path
+
+    finally: #deeleting every temp file even if the try fails
+        if final is not None:
+            final.close()
+
+        for clip in clips:
+            clip.close()
+
+        gc.collect()
+
+        for path in temp_files:
+            try:
+                Path(path).unlink(missing_ok=True)
+            except PermissionError:
+                pass
+
         try:
-            tmp.close()
-        except:
+            tmp_dir.rmdir()
+        except OSError:
             pass
-
-        temp_files.append(tmp_path)
-        track_number_counter += 1
-
-    #build outro
-    outro = build_outro(8, outro_background, outro_song)
-    outro_path = "tmp_outro.mp4"
-    outro.write_videofile(outro_path, fps=25)
-    outro.close()
-    temp_files.append(outro_path)
-    gc.collect()
-
-    clips = [VideoFileClip(p) for p in temp_files]
-    final = concatenate_videoclips(clips, method="chain")
-    final.write_videofile(str(BASE_DIR / output_path), fps=25)
-
-    #cleaning up
-    final.close()
-    for c in clips:
-        c.close()
-    gc.collect()
-
-    return output_path

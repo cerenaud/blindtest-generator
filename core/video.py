@@ -778,7 +778,7 @@ def build_outro(
         color="white",
         method="label",
         size=(1600,150)
-    ).with_position(("center", 250)).with_start(0.5).with_duration(5)
+    ).with_position("center").with_start(0.5).with_duration(5)
 
     logo = (
         ImageClip("data/backgrounds/logo_v1.PNG")
@@ -796,7 +796,6 @@ def build_outro(
         background,
         overlay,
         text,
-        logo
     ]).with_duration(outro_duration)
 
     outro = outro.with_effects([FadeOut(1)])
