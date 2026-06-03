@@ -728,7 +728,9 @@ def build_intro(
     intro = intro.with_effects([FadeOut(1)])
 
     audio = AudioFileClip(song_path)
+    audio = audio.subclipped(9, audio.duration)
     intro = intro.with_audio(audio)
+
 
     intro = intro.with_audio(audio).with_effects([
         AudioFadeIn(1),
@@ -778,7 +780,7 @@ def build_outro(
         color="white",
         method="label",
         size=(1600,150)
-    ).with_position("center").with_start(0.5).with_duration(5)
+    ).with_position(("center",250)).with_start(0.5).with_duration(5)
 
     logo = (
         ImageClip("data/backgrounds/logo_v1.PNG")

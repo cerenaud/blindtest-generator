@@ -2,10 +2,13 @@ import os
 import sqlite3
 from pathlib import Path
 from moviepy import VideoFileClip
+from typing_extensions import override
+
 from ai.agents import correct_release_year, is_official_clip
 from core.audio import BASE_DIR
 import requests
 from yt_dlp import YoutubeDL
+from yt_dlp.utils import DownloadError
 import tempfile
 import shutil
 
@@ -28,6 +31,29 @@ DB_PATH = BASE_DIR / "data" / "blindtest.db"
 # 169 : Soul & Funk
 # 153 : Blues
 # 197 : Latino
+
+GENRE_NAMES = {
+    132: "Pop",
+    116: "Rap/Hip Hop",
+    152: "Rock",
+    113: "Dance",
+    165: "R&B",
+    85: "Alternative",
+    106: "Electro",
+    52: "Chanson française",
+    144: "Reggae",
+    129: "Jazz",
+    464: "Metal",
+    169: "Soul & Funk",
+    153: "Blues",
+    197: "Latino",
+}
+
+def _album_genre_names(album_data: dict) -> list[str]:
+    return [
+        genre["name"]
+        for genre in album_data.get("genres", {}).get("data", [])
+    ]
 
 def init_db():
     """Create a database for the music previews from deezer API.
@@ -56,9 +82,7 @@ def init_db():
     conn.close()
 
 
-def _insert_tracks(
-        tracks: list
-):
+def _insert_tracks(tracks: list):
     """Insert tracks into database
 
     Parameters
@@ -113,17 +137,14 @@ def _insert_tracks(
         # album infos
         album_id = track["album"]["id"]
 
-        album_data = requests.get(
+        album_data = track.get("_album_data") or requests.get(
             f"https://api.deezer.com/album/{album_id}"
         ).json()
 
         album_cover_url = album_data.get("cover_big")
 
-        genre = (
-            album_data["genres"]["data"][0]["name"]
-            if album_data["genres"]["data"]
-            else None
-        )
+        album_genres = _album_genre_names(album_data)
+        genre = album_genres[0] if album_genres else None
 
         year = (
             int(album_data["release_date"][:4])
@@ -197,9 +218,60 @@ def search_and_import(query: str, nb_tracks: int):
     response = requests.get(f"https://api.deezer.com/search?q={query}&limit={nb_tracks}")
     _insert_tracks(response.json()["data"])
 
+def _deezer_data(url: str) -> list:
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.json().get("data", [])
+
 def import_by_genre(genre_id: int, nb_tracks: int):
-    response = requests.get(f"https://api.deezer.com/chart/{genre_id}/tracks?limit={nb_tracks}")
-    _insert_tracks(response.json()["data"])
+    genre_name = GENRE_NAMES.get(genre_id)
+    if genre_name is None:
+        raise ValueError(f"Unknown Deezer genre id: {genre_id}")
+
+    collected = []
+    seen_track_ids = set()
+    artist_index = 0
+
+    while len(collected) < nb_tracks:
+        artists = _deezer_data(
+            f"https://api.deezer.com/genre/{genre_id}/artists"
+            f"?limit=100&index={artist_index}"
+        )
+
+        if not artists:
+            break
+
+        for artist in artists:
+            tracks = _deezer_data(
+                f"https://api.deezer.com/artist/{artist['id']}/top?limit=100"
+            )
+
+            for track in tracks:
+                if track["id"] in seen_track_ids:
+                    continue
+
+                album_id = track["album"]["id"]
+                album_data = requests.get(
+                    f"https://api.deezer.com/album/{album_id}"
+                ).json()
+                album_genres = _album_genre_names(album_data)
+
+                if genre_name not in album_genres:
+                    continue
+
+                track["_album_data"] = album_data
+                seen_track_ids.add(track["id"])
+                collected.append(track)
+
+                if len(collected) >= nb_tracks:
+                    break
+
+            if len(collected) >= nb_tracks:
+                break
+
+        artist_index += 100
+    print(collected)
+    _insert_tracks(collected)
 
 def import_charts(nb_tracks: int):
     response = requests.get(f"https://api.deezer.com/chart/0/tracks?limit={nb_tracks}")
@@ -533,57 +605,44 @@ def get_youtube_video_url(
         title_ytb: str,
         country: str
 ) -> str | None:
-    query = f"{artist_ytb} - {title_ytb} official video"
 
-    ydl_opts = {
-        "quiet": True,
-        "extract_flat": False,
-        "skip_download": True,
-    }
 
-    # with YoutubeDL(ydl_opts) as ydl:
-    #
-    #     results = ydl.extract_info(
-    #         f"ytsearch5:{query}",
-    #         download=False
-    #     )
-    #
-    #     entries = results.get("entries", [])
+    if country == "FR" or country == "BE":
+        is_video = imdb_clip_exists(artist_ytb, title_ytb) #search imdb
+    else:  # english
+        is_video = has_music_video_section(artist_ytb, title_ytb) #search wiki
 
-    with YoutubeDL({
-        "quiet": True,
-        "skip_download": True,
-        "extract_flat": True,  # 👈 évite résolution des vidéos
-    }) as ydl:
+    if is_video: #there is an official clip, we take the first youtube return
+        query = f"{artist_ytb} - {title_ytb} official video"
 
-        results = ydl.extract_info(f"ytsearch5:{query}", download=False)
-        entries = results.get("entries", [])
+        with YoutubeDL({
+            "skip_download": True,
+            "extract_flat": True,  # evite resolution des videos
+        }) as ydl:
 
-        if not entries:
-            return None
+            results = ydl.extract_info(f"ytsearch5:{query}", download=False)
+            entries = results.get("entries", [])
 
-        video = entries[0]
-        #usual tags for an official video
-        if "official" in video["title"].lower() and "video" in video["title"].lower() and "audio" not in video["title"].lower():
-            return f"https://www.youtube.com/watch?v={video['id']}"
-
-        # or "clip officiel" for my frenchies
-        elif "officiel" in video["title"].lower() and "clip" in video["title"].lower() and "audio" not in video["title"].lower():
-            return f"https://www.youtube.com/watch?v={video['id']}"
-
-        else: #apparently no official video, we'll ask AI or wiki
-
-            #If the song has a section video in wikipedia, then it has an officiel music video
-            if country == "FR" or country == "BE":
-                is_video = imdb_clip_exists(artist_ytb, title_ytb)
-            else: #english
-                is_video = has_music_video_section(artist_ytb, title_ytb)
-
-            if is_video:
-                #we'll consider that the first ytb search return the right url
-                return f"https://www.youtube.com/watch?v={video['id']}"
-            else:
+            if not entries:
                 return None
+
+            video = entries[0]
+
+            return f"https://www.youtube.com/watch?v={video['id']}"
+
+    else: #no official video
+        return None
+
+
+def _update_video_path(track_id: int, video_path: str | Path):
+    """update video path if the video already exist but the path was lost
+    """
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("UPDATE tracks SET video_path = ? WHERE deezer_id = ?",
+                   (str(video_path), track_id))
+    conn.commit()
+    conn.close()
 
 
 def download_youtube_video(
@@ -615,6 +674,7 @@ def download_youtube_video(
     """
     #if video is already downloaded, exit
     if os.path.exists(video_path):
+        _update_video_path(track_id, video_path)
         return
 
     temp_dir = tempfile.mkdtemp()
@@ -629,7 +689,11 @@ def download_youtube_video(
 
         with YoutubeDL(ydl_opts) as ydl:
             #get the info from the url and download it in tempfile
-            info = ydl.extract_info(youtube_url, download=True)
+            try:
+                info = ydl.extract_info(youtube_url, download=True)
+            except DownloadError as e:
+                print(f"Skipping YouTube download for {track_id}: {e}")
+                return
             temp_file = ydl.prepare_filename(info)
             temp_file = os.path.splitext(temp_file)[0] + ".mp4"
 
@@ -642,12 +706,7 @@ def download_youtube_video(
         shutil.rmtree(temp_dir, ignore_errors=True)
 
     # Update database
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE tracks SET video_path = ? WHERE deezer_id = ?",
-                   (str(video_path), track_id))
-    conn.commit()
-    conn.close()
+    _update_video_path(track_id, video_path)
 
 
 def download_all_youtube_videos():
@@ -655,7 +714,7 @@ def download_all_youtube_videos():
     """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT title, artist, country, deezer_id FROM tracks WHERE video_path IS NULL")
+    cursor.execute("SELECT title, artist, country, deezer_id, video_path FROM tracks")
     rows = cursor.fetchall()
     conn.close()
 
@@ -665,10 +724,20 @@ def download_all_youtube_videos():
         artist = row[1]
         country = row[2]
         track_id = row[3]
-        url = get_youtube_video_url(artist, title, country)
-        if url is not None:
-            video_path = BASE_DIR / "data" / "videos" / f"{track_id}.mp4"
-            try:
+        current_video_path = row[4]
+
+        if current_video_path and Path(current_video_path).exists():
+            continue
+
+        video_path = BASE_DIR / "data" / "videos" / f"{track_id}.mp4"
+        if video_path.exists():
+            _update_video_path(track_id, video_path)
+            continue
+
+        try:
+            url = get_youtube_video_url(artist, title, country)
+
+            if url is not None:
                 download_youtube_video(track_id,url, video_path,start_time, end_time)
-            except Exception as e:
-                pass
+        except Exception as e:
+            print(f"Skipping video for {artist} - {title}: {e}")
