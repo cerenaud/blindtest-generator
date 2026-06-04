@@ -114,7 +114,7 @@ def generate_blindtest_iterative(
     try:
         intro = build_intro(10, intro_background, intro_text, intro_song)
         intro_path = tmp_dir / "tmp_intro.mp4"
-        intro.write_videofile(str(intro_path), fps=25)
+        intro.write_videofile(str(intro_path), fps=40)
         intro.close()
         temp_files.append(intro_path)
 
@@ -145,7 +145,7 @@ def generate_blindtest_iterative(
                 )
 
             tmp_path = tmp_dir / f"tmp_track_{track_number_counter}.mp4"
-            clip.write_videofile(str(tmp_path), fps=25)
+            clip.write_videofile(str(tmp_path), fps=40)
 
             clip.close()
             del clip
@@ -162,7 +162,7 @@ def generate_blindtest_iterative(
 
         outro = build_outro(8, outro_background, outro_song)
         outro_path = tmp_dir / "tmp_outro.mp4"
-        outro.write_videofile(str(outro_path), fps=25)
+        outro.write_videofile(str(outro_path), fps=40)
         outro.close()
         temp_files.append(outro_path)
 
@@ -170,7 +170,7 @@ def generate_blindtest_iterative(
 
         clips = [VideoFileClip(str(p)) for p in temp_files]
         final = concatenate_videoclips(clips, method="chain")
-        final.write_videofile(str(BASE_DIR / output_path), fps=25)
+        final.write_videofile(str(BASE_DIR / output_path), fps=40)
 
         return output_path
 

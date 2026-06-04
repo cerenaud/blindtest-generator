@@ -2,8 +2,6 @@ import os
 import sqlite3
 from pathlib import Path
 from moviepy import VideoFileClip
-from typing_extensions import override
-
 from ai.agents import correct_release_year, is_official_clip
 from core.audio import BASE_DIR
 import requests
