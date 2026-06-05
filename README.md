@@ -1,6 +1,5 @@
-# Blindtest Generator
+# Blindtest Generator V1
 
-Temporary README for the blindtest video generator.
 
 The project can:
 
@@ -24,6 +23,10 @@ data/blindtest.db
 - yt-dlp
 - Pillow
 - mutagen
+- requests
+- langchain
+- python-dotenv
+- yt-dlp
 
 ## Installation
 
@@ -39,103 +42,32 @@ Install `ffmpeg` and make sure it is available from the terminal:
 ffmpeg -version
 ```
 
-Some functions also use OpenAI through `ai/agents.py`. If you use those parts, make sure your API key is available in your environment or `.env` file.
+One functions also use OpenAI through `ai/agents.py`. Make sure your API key is available in your environment or `.env` file. You will only need a free API key.
 
-## Database Creation And Import
+## Creating music database
 
-Example snippet to create the database, import tracks, and download the required assets:
+Execute the functions in main.py, it will guide you for creating and filling the database.
 
-```python
-from core.database import (
-    init_db,
-    import_by_genre,
-    import_charts,
-    import_by_artist,
-    search_and_import,
-    download_all_previews,
-    download_all_album_covers,
-    clean_db,
-)
-
-# 1. Create the SQLite database and table.
-init_db()
-
-# 2. Import tracks from Deezer.
-import_by_genre(152, 500)      # Rock
-import_by_genre(132, 300)      # Pop
-import_by_genre(116, 250)      # Rap/Hip Hop
-import_by_genre(106, 200)      # Electro
-import_by_genre(52, 300)       # French songs
-
-# Optional imports.
-import_charts(100)             # Global Deezer charts
-import_by_artist(27, 50)       # Top tracks for one Deezer artist ID
-search_and_import("queen rock", 100)
-
-# 3. Download local files used by the blindtest generator.
-download_all_previews()
-download_all_album_covers()
-
-# 4. Clean missing or corrupted preview paths.
-clean_db()
-```
-
-Useful Deezer genre IDs:
-
-```text
-132 : Pop
-116 : Rap/Hip Hop
-152 : Rock
-113 : Dance
-165 : R&B
-85  : Alternative
-106 : Electro
-52  : Chanson française
-144 : Reggae
-129 : Jazz
-464 : Metal
-169 : Soul & Funk
-153 : Blues
-197 : Latino
-```
-
-Quick database checks:
-
-```python
-import sqlite3
-
-con = sqlite3.connect("data/blindtest.db")
-cur = con.cursor()
-
-print(cur.execute("""
-    SELECT genre, COUNT(*)
-    FROM tracks
-    GROUP BY genre
-    ORDER BY COUNT(*) DESC
-""").fetchall())
-
-print(cur.execute("""
-    SELECT genre, COUNT(*), SUM(preview_path IS NOT NULL)
-    FROM tracks
-    GROUP BY genre
-    ORDER BY COUNT(*) DESC
-""").fetchall())
-
-con.close()
-```
 
 ## Generate Blindtest
 
-Example snippet to generate a blindtest video:
+To generate a blindtest, you will need: 
+- an intro song and background video
+- An outro song and background video
+- a reveal and guessing background video
+You will need to fulfill the path in these variables:
+```python
+    intro_path = "path/to/intro_video.mp4" #path to the intro background video
+    intro_song = "path/to/intro_song.mp3"
+    outro_path = "path/to/outro_video.mp4" #path to the outro background video
+    outro_song = "path/to/outro_video.mp3"
+    guessing_background = "path/to/guessing_background_video.mp4"
+    reveal_background = "path/to/reveal_background_video.mp4"
+```
+
+You can then generate different Blindtest by genre,subgenre, max & min year and number of tracks per blindtest.
 
 ```python
-from core.generator import generate_blindtest_iterative
-
-intro_background = "data/backgrounds/black_yellow_30fps.mp4"
-intro_song = "data/backgrounds/Watercolour - Pendulum [HQ].mp3"
-outro_background = "data/backgrounds/soft_flow_pastel_30fps.mp4"
-outro_song = "data/backgrounds/Nujabes - flowers [Official Audio].mp3"
-
 generate_blindtest_iterative(
     output_path="output/blindtest_rock.mp4",
     intro_text="Rock Blindtest",
@@ -147,10 +79,20 @@ generate_blindtest_iterative(
     guessing_duration=10,
     reveal_duration=5,
     genre="Rock",
+    sub_genre = "classic_rock"
     min_year=1970,
-    max_year=2026,
+    max_year=2026
 )
 ```
+There are currently 6 genre of music:
+- Rock
+- Pop
+- Rap
+- Chanson française / french music
+- Electro
+- Metal
+
+You can search every subgenre of a genre in genre.py
 
 Generate without a genre filter:
 
@@ -160,10 +102,10 @@ from core.generator import generate_blindtest_iterative
 generate_blindtest_iterative(
     output_path="output/blindtest_mix.mp4",
     intro_text="Mixed Blindtest",
-    intro_background="data/backgrounds/black_yellow_30fps.mp4",
-    intro_song="data/backgrounds/Watercolour - Pendulum [HQ].mp3",
-    outro_background="data/backgrounds/soft_flow_pastel_30fps.mp4",
-    outro_song="data/backgrounds/Nujabes - flowers [Official Audio].mp3",
+    intro_background=intro_background,
+    intro_song=intro_song,
+    outro_background=outro_background,
+    outro_song=outro_song,
     nb_tracks=50,
     guessing_duration=10,
     reveal_duration=5,

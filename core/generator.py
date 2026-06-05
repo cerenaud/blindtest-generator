@@ -211,7 +211,7 @@ def generate_blindtest_iterative(
 
         return output_path
 
-    finally: #deeleting every temp file even if the try fails
+    finally: #deleting every temp file even if the try fails
         if final is not None:
             final.close()
 

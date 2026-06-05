@@ -10,5 +10,4 @@ langchain-openai
 langchain-core
 pydantic
 python-dotenv
-
 yt-dlp
