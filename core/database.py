@@ -56,7 +56,7 @@ def _album_genre_names(album_data: dict) -> list[str]:
     ]
 
 def init_db():
-    """Create a database for the music previews from deezer API.
+    """Create a database to store musics with their datas to generate blindtest
     """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -85,7 +85,12 @@ def init_db():
 
 def _insert_tracks(tracks: list):
     """
-    Insert tracks into database
+    Insert tracks into database.
+
+    Parameters
+    ----------
+    tracks : list
+        list of tracks from deezer API.
     """
 
     data = {
@@ -103,6 +108,7 @@ def _insert_tracks(tracks: list):
             f"https://api.deezer.com/track/{track_id}"
         ).json()
 
+        #get isrc track to get the country
         isrc = full_track.get("isrc")
         country = isrc[:2] if isrc else None
 
@@ -173,7 +179,7 @@ def _insert_tracks(tracks: list):
                 "id": track_id,
             })
 
-    if data["songs"]:
+    if data["songs"]: #call to agent.py to correct release year
         data = correct_release_year(data).model_dump()
 
         for song in data["songs"]:
@@ -191,10 +197,24 @@ def _insert_tracks(tracks: list):
 
 def search_and_import(
     query: str,
-    nb_tracks: int,
     genre: str,
-    subgenre: str
+    subgenre: str,
+    nb_tracks: int = 1,
 ):
+    """
+    Search and fetch 1 (or more) music from a query to the deezer API.
+
+    Parameters
+    ----------
+    query : str
+        Music to import.
+    genre : str
+        genre of the music to import.
+    subgenre : str
+        subgenre associated to a global genre (see genres.py)
+    nb_tracks: int
+        number of tracks to import from the query.
+    """
     response = requests.get(
         f"https://api.deezer.com/search?q={query}&limit={nb_tracks}"
     ).json()
@@ -210,74 +230,52 @@ def search_and_import(
 
     _insert_tracks(tracks)
 
-def _deezer_data(url: str) -> list:
-    response = requests.get(url)
-    response.raise_for_status()
-    return response.json().get("data", [])
+def _deezer_search_artist_id(
+        artist_name: str
+)-> int | None:
+    """Retrieve deezer id of an artist
 
-#only use it or import artist and specified genre
-def import_by_genre(genre_id: int, nb_tracks: int):
-    genre_name = GENRE_NAMES.get(genre_id)
-    if genre_name is None:
-        raise ValueError(f"Unknown Deezer genre id: {genre_id}")
+    Parameters
+    ----------
+    artist_name : str
+        Name of the artist.
 
-    collected = []
-    seen_track_ids = set()
-    artist_index = 0
-
-    while len(collected) < nb_tracks:
-        artists = _deezer_data(
-            f"https://api.deezer.com/genre/{genre_id}/artists"
-            f"?limit=100&index={artist_index}"
-        )
-
-        if not artists:
-            break
-
-        for artist in artists:
-            tracks = _deezer_data(
-                f"https://api.deezer.com/artist/{artist['id']}/top?limit=100"
-            )
-
-            for track in tracks:
-                if track["id"] in seen_track_ids:
-                    continue
-
-                album_id = track["album"]["id"]
-                album_data = requests.get(
-                    f"https://api.deezer.com/album/{album_id}"
-                ).json()
-                album_genres = _album_genre_names(album_data)
-
-                if genre_name not in album_genres:
-                    continue
-
-                track["_album_data"] = album_data
-                seen_track_ids.add(track["id"])
-                collected.append(track)
-
-                if len(collected) >= nb_tracks:
-                    break
-
-            if len(collected) >= nb_tracks:
-                break
-
-        artist_index += 100
-    print(collected)
-    _insert_tracks(collected)
-
-def _deezer_search_artist_id(artist_name: str):
+    Returns
+    -------
+    int | None
+        id of the artist or None if not found.
+    """
     url = f"https://api.deezer.com/search/artist?q={artist_name}"
     data = requests.get(url).json()
 
     if "data" not in data or len(data["data"]) == 0:
         return None
 
-    # prend le premier résultat (simple et suffisant pour ton cas)
     return data["data"][0]["id"]
 
 
-def import_by_genre_new(genre_name: str, nb_tracks: int):
+def import_by_genre(
+        genre_name: str,
+        nb_tracks: int
+) ->list:
+    """
+    Import music by genre from deezer API. This function will use genre_tree
+    from genres.py to import a genre and all subgenre from a list of artist to ensure
+    geenre validity.
+
+    Parameters
+    ----------
+    genre_name : str,
+        genre to import: "rock","pop","rap","chanson_fr","electro","metal"
+    nb_tracks : int
+        number of tracks to import
+
+    Returns
+    -------
+    list
+        List of tracks fetched from deezer API.
+
+    """
     genre_name = genre_name.lower()
 
     subgenres = GENRE_TREE.get(genre_name)
@@ -321,7 +319,7 @@ def import_by_genre_new(genre_name: str, nb_tracks: int):
 
                 count += 1
 
-                # max 3 tracks par artiste
+                # 3 tracks per artist, could be more
                 if count >= 3:
                     break
 
@@ -342,6 +340,20 @@ def import_by_artist(
     genre: str,
     subgenre: str
 ):
+    """
+    Fetch nb_tracks music from a given artist name from deezer API.
+
+    Parameters
+    ----------
+    artist_name : str
+        Name of the artist.
+    nb_tracks: int
+        number of tracks to import from the query.
+    genre : str
+        genre of the music to import.
+    subgenre : str
+        subgenre associated to a global genre (see genres.py)
+    """
     search = requests.get(
         f"https://api.deezer.com/search/artist?q={artist_name}&limit=1"
     ).json()
@@ -374,7 +386,7 @@ def get_tracks(
         min_year: int = None,
         max_year: int = None
 ) -> list:
-    """Read into the database to get tracks.
+    """Read into the database to get tracks for generate_blindtest() function.
 
     Parameters
     ----------
@@ -424,8 +436,6 @@ def get_tracks(
     cursor.execute(query, params)
     rows = cursor.fetchall()
 
-
-
     conn.close()
     return rows
 
@@ -433,7 +443,7 @@ def get_tracks(
 def download_preview(
         deezer_id: int
 ) -> str | None:
-    """Download a preview of a track
+    """Download a preview of a track from deezer API.
 
     Parameters
     ----------
@@ -743,7 +753,7 @@ def download_youtube_video(
         end_time: int,
 
 ):
-    """Download a youtube video and crop it between start_time and end_time (No need
+    """Download a YouTube video and crop it between start_time and end_time (No need
     for a full length video when the video only appears for a few seconds in a blindtest).
 
     Parameters

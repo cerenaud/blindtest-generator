@@ -86,6 +86,8 @@ def generate_blindtest_iterative(
     intro_song: str,
     outro_background: str,
     outro_song: str,
+    guessing_background: str,
+    reveal_background: str,
     nb_tracks: int = 10,
     guessing_duration: int = 10,
     reveal_duration: int = 5,
@@ -97,12 +99,46 @@ def generate_blindtest_iterative(
     """Generate a blindtest video by generating every clip for every track and
     assemble at the end. This allows to create a blindtest with 30 or more tracks
     without exploding RAM with moviepy.
+
+        Parameters
+    ----------
+    output_path : str
+        Path where the blindtest video will be saved.
+    intro_text : str
+        intro text to describe the blindtest.
+    intro_background: str
+        path to the background video for the intro.
+    intro_song: str
+        path to the song for the intro.
+    outro_background: str
+        path to the background video for the outro.
+    outro_song: str
+        path to the song for the outro.
+    guessing_background: str
+        path to the guessing background video to use.
+    reveal_background: str,
+        path to the reveal background video to use.
+    nb_tracks : int
+        number of tracks of the blindtest.
+    guessing_duration : int
+        duration of the guessing part for a song in the blindtest.
+    reveal_duration: int
+        duration of the reveal part for a song in the blindtest.
+    genre: str | list[str]
+        music genre of the blindtest. Could be one or more.
+    min_year: int:
+        minimum release year for a music to appear in the blindtest.
+    max_year: int:
+        maximum release year for a music to appear in the blindtest.
+
+    Returns
+    -------
+    output_path : str
+        :the path were the blindtest will be saved.
     """
     clean_db()
 
     mp3_files = get_tracks(nb_tracks, genre,subgenre, min_year=min_year, max_year=max_year)
-    guessing_background = "data/backgrounds/turntable_25fps.mp4"
-    reveal_background = "data/backgrounds/vhs_particle_25fps.mp4"
 
     tmp_dir = BASE_DIR / "data" / "tmp_blindtest"
     tmp_dir.mkdir(parents=True, exist_ok=True)
