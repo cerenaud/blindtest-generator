@@ -31,14 +31,13 @@ if __name__ == "__main__":
     reveal_background = ""
 
     #generate_blindtest_iterative(
-    #     "output/test - new db.mp4",
-    #     intro_text = "test - 2 extraits",
-    #     nb_tracks= 2 ,
+    #     "output/Blindtest.mp4",
+    #     intro_text = "All genre",
+    #     nb_tracks= 15 ,
     #     guessing_duration= 10,
     #     reveal_duration= 5,
     #     intro_background =intro_path,
     #     intro_song =intro_song,
     #     outro_background =outro_path,
-    #     outro_song =outro_song,
-    #     subgenre="classic_rock"
-    #                   )
+    #     outro_song =outro_song
+    #)
