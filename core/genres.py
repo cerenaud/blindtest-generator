@@ -65,3 +65,79 @@ metalcore = ["Killswitch Engage","As I Lay Dying","Bullet for My Valentine","Par
 nu_metal = ["Korn","Slipknot","Linkin Park","System of a Down","Limp Bizkit","Deftones","Disturbed","Papa Roach","P.O.D.","Godsmack","Mudvayne","Static-X","Coal Chamber","Sevendust","Kittie","Ill Niño","Drowning Pool","Powerman 5000","Taproot","Adema","Breaking Benjamin","Three Days Grace","Skindred","Rob Zombie","Hed PE"]
 groove_metal = ["Pantera","Lamb of God","Machine Head","Sepultura","DevilDriver","Exhorder","Chimaira","Soulfly","Gojira","Mastodon","Fear Factory","Prong","White Zombie","High On Fire","Kvelertak","Orange Goblin","Black Label Society","Hellyeah","Five Finger Death Punch","Ill Nino","Crowbar","Down","Corrosion of Conformity","Hatebreed"]
 progressive_metal = ["Dream Theater","Opeth","Tool","Queensrÿche","Fates Warning","Symphony X","Between the Buried and Me","Porcupine Tree","Pain of Salvation","Leprous","Periphery","TesseracT","Animals as Leaders","Meshuggah","Steven Wilson","Riverside","Karnivool","Soilwork","Voivod","Haken","Caligula's Horse","The Contortionist","Gojira","Mastodon","Alcest"]
+
+
+GENRE_TREE = {
+
+"rock": {
+    "classic_rock": classic_rock,
+    "hard_rock": hard_rock,
+    "grunge": grunge,
+    "alternative_rock": alternative_rock,
+    "punk_rock": punk_rock,
+    "indie_rock": indie_rock,
+    "prog_rock": prog_rock,
+    "garage_rock": garage_rock,
+    "folk_rock": folk_rock
+},
+
+"pop": {
+    "pop_rock": pop_rock,
+    "dance_pop": dance_pop,
+    "electropop": electropop,
+    "latin_pop": latin_pop,
+    "rnb_pop": rnb_pop,
+    "teen_pop": teen_pop,
+    "synthpop": synthpop
+},
+
+"rap": {
+    "old_school_hip_hop": old_school_hip_hop,
+    "ninety_s_hip_hop": ninety_s_hip_hop,
+    "two_thousand_hip_hop": two_thousand_hip_hop,
+    "trap": trap,
+    "drill": drill,
+    "conscious_rap": conscious_rap,
+    "pop_rap": pop_rap,
+    "fr_rap": fr_rap,
+    "uk_rap": uk_rap
+},
+
+"chanson_fr": {
+    "chanson_fr_classique": chanson_fr_classique,
+    "chanson_fr_60_70": chanson_fr_annees_60_70,
+    "chanson_fr_80_90": chanson_fr_annees_80_90,
+    "variete_pop_fr": variete_pop_fr,
+    "chanson_fr_indie": chanson_fr_indie,
+    "chanson_fr_rap": chanson_fr_rap,
+    "chanson_fr_rap_crossover": chanson_fr_rap_crossover,
+    "chanson_fr_electro_pop": chanson_fr_electro_pop
+},
+
+"electro": {
+    "house": house,
+    "techno": techno,
+    "trance": trance,
+    "dubstep": dubstep,
+    "drum_and_bass": drum_and_bass,
+    "electro_house": electro_house,
+    "deep_house": deep_house,
+    "progressive_house": progressive_house,
+    "future_bass": future_bass,
+    "electro_pop": electro_pop
+},
+
+"metal": {
+    "heavy_metal": heavy_metal,
+    "thrash_metal": thrash_metal,
+    "death_metal": death_metal,
+    "black_metal": black_metal,
+    "power_metal": power_metal,
+    "doom_metal": doom_metal,
+    "metalcore": metalcore,
+    "nu_metal": nu_metal,
+    "groove_metal": groove_metal,
+    "progressive_metal": progressive_metal
+}
+
+}

@@ -10,6 +10,8 @@ from yt_dlp.utils import DownloadError
 import tempfile
 import shutil
 
+from core.genres import GENRE_TREE
+
 DB_PATH = BASE_DIR / "data" / "blindtest.db"
 
 #Create a database to download previews from deezer
@@ -65,6 +67,7 @@ def init_db():
             artist TEXT NOT NULL,
             album TEXT,
             genre TEXT,
+            subgenre TEXT,
             year INTEGER,
             popularity INTEGER,
             duration INTEGER,
@@ -81,50 +84,21 @@ def init_db():
 
 
 def _insert_tracks(tracks: list):
-    """Insert tracks into database
-
-    Parameters
-    ----------
-    tracks : list
-        a list of tracks from the deezer API.
-
     """
+    Insert tracks into database
+    """
+
     data = {
         "songs": []
     }
 
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    # for track in tracks:
-    #     # Appel supplémentaire pour genre et year
-    #     album_id = track["album"]["id"]
-    #     album_data = requests.get(f"https://api.deezer.com/album/{album_id}").json()
-    #     album_cover_url = album_data.get("cover_big", None)
-    #     genre = album_data["genres"]["data"][0]["name"] if album_data["genres"]["data"] else None
-    #     year = int(album_data["release_date"][:4]) if "release_date" in album_data else None
-    #     popularity = track.get("rank", None)
-    #
-    #     cursor.execute("""
-    #         INSERT OR IGNORE INTO tracks (deezer_id, title, artist, album, genre, year, popularity, duration, country, album_cover_url)
-    #         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)
-    #     """, (
-    #         track["id"],
-    #         track["title_short"],
-    #         track["artist"]["name"],
-    #         track["album"]["title"],
-    #         genre,
-    #         year,
-    #         popularity,
-    #         track["duration"],
-    #         track["isrc"][:2], #extract the 2 first character to get the country
-    #         album_cover_url,
-    #     ))
-    #
+
     for track in tracks:
 
         track_id = track["id"]
 
-        # FULL TRACK DATA (contains isrc)
         full_track = requests.get(
             f"https://api.deezer.com/track/{track_id}"
         ).json()
@@ -132,7 +106,6 @@ def _insert_tracks(tracks: list):
         isrc = full_track.get("isrc")
         country = isrc[:2] if isrc else None
 
-        # album infos
         album_id = track["album"]["id"]
 
         album_data = track.get("_album_data") or requests.get(
@@ -140,9 +113,6 @@ def _insert_tracks(tracks: list):
         ).json()
 
         album_cover_url = album_data.get("cover_big")
-
-        album_genres = _album_genre_names(album_data)
-        genre = album_genres[0] if album_genres else None
 
         year = (
             int(album_data["release_date"][:4])
@@ -152,6 +122,9 @@ def _insert_tracks(tracks: list):
 
         popularity = track.get("rank")
 
+        genre = track.get("genre")
+        subgenre = track.get("subgenre")
+
         cursor.execute("""
             INSERT OR IGNORE INTO tracks (
                 deezer_id,
@@ -159,19 +132,21 @@ def _insert_tracks(tracks: list):
                 artist,
                 album,
                 genre,
+                subgenre,
                 year,
                 popularity,
                 duration,
                 country,
                 album_cover_url
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             track_id,
             track["title_short"],
             track["artist"]["name"],
             track["album"]["title"],
             genre,
+            subgenre,
             year,
             popularity,
             track["duration"],
@@ -179,48 +154,68 @@ def _insert_tracks(tracks: list):
             album_cover_url,
         ))
 
-        if any(word in track["title"] for word in ["Anniversary", "Remaster", "Anniversaire", "Deluxe", "Remastered", "Best", "deluxe", "Edition"]): #probably wrong release year
-
-            # cursor.execute("""
-            #                 SELECT id FROM tracks WHERE deezer_id = ?
-            #             """, (track["id"],))
-            #
-            # row = cursor.fetchone()
-            # row_id = row[0] if row else None
-            #
-            # # if row_id:
-            # #     print(track["title"], row_id)
-
+        if any(
+            word.lower() in track["title"].lower()
+            for word in [
+                "anniversary",
+                "remaster",
+                "anniversaire",
+                "deluxe",
+                "remastered",
+                "best",
+                "edition",
+            ]
+        ):
             data["songs"].append({
                 "name": track["title_short"],
-                "artist":  track["artist"]["name"],
+                "artist": track["artist"]["name"],
                 "release_year": year,
-                "id": track["id"] #get the row
+                "id": track_id,
             })
 
-    #call to agent.py to correct data
-    data = correct_release_year(data).model_dump()
+    if data["songs"]:
+        data = correct_release_year(data).model_dump()
 
-    #insert the corrected yeear in databasee
-    for song in data["songs"]:
-        cursor.execute("""
-            UPDATE tracks
-            SET year = ?
-            WHERE deezer_id = ?
-        """, (song["release_year"], song["id"]))
+        for song in data["songs"]:
+            cursor.execute("""
+                UPDATE tracks
+                SET year = ?
+                WHERE deezer_id = ?
+            """, (
+                song["release_year"],
+                song["id"]
+            ))
 
     conn.commit()
     conn.close()
 
-def search_and_import(query: str, nb_tracks: int):
-    response = requests.get(f"https://api.deezer.com/search?q={query}&limit={nb_tracks}")
-    _insert_tracks(response.json()["data"])
+def search_and_import(
+    query: str,
+    nb_tracks: int,
+    genre: str,
+    subgenre: str
+):
+    response = requests.get(
+        f"https://api.deezer.com/search?q={query}&limit={nb_tracks}"
+    ).json()
+
+    tracks = response.get("data", [])
+
+    for track in tracks:
+        if "artist" not in track:
+            continue
+        track["genre"] = genre
+        track["subgenre"] = subgenre
+        track["artist_name"] = track["artist"]["name"]
+
+    _insert_tracks(tracks)
 
 def _deezer_data(url: str) -> list:
     response = requests.get(url)
     response.raise_for_status()
     return response.json().get("data", [])
 
+#only use it or import artist and specified genre
 def import_by_genre(genre_id: int, nb_tracks: int):
     genre_name = GENRE_NAMES.get(genre_id)
     if genre_name is None:
@@ -271,18 +266,110 @@ def import_by_genre(genre_id: int, nb_tracks: int):
     print(collected)
     _insert_tracks(collected)
 
-def import_charts(nb_tracks: int):
-    response = requests.get(f"https://api.deezer.com/chart/0/tracks?limit={nb_tracks}")
-    _insert_tracks(response.json()["data"])
+def _deezer_search_artist_id(artist_name: str):
+    url = f"https://api.deezer.com/search/artist?q={artist_name}"
+    data = requests.get(url).json()
 
-def import_by_artist(artist_id: int, nb_tracks: int):
-    response = requests.get(f"https://api.deezer.com/artist/{artist_id}/top?limit={nb_tracks}")
-    _insert_tracks(response.json()["data"])
+    if "data" not in data or len(data["data"]) == 0:
+        return None
+
+    # prend le premier résultat (simple et suffisant pour ton cas)
+    return data["data"][0]["id"]
+
+
+def import_by_genre_new(genre_name: str, nb_tracks: int):
+    genre_name = genre_name.lower()
+
+    subgenres = GENRE_TREE.get(genre_name)
+    if subgenres is None:
+        raise ValueError(f"Unknown genre: {genre_name}")
+
+    collected = []
+    seen_track_ids = set()
+
+    for subgenre_name, artists in subgenres.items():
+
+        for artist_name in artists:
+
+            if len(collected) >= nb_tracks:
+                break
+
+            artist_id = _deezer_search_artist_id(artist_name)
+            if not artist_id:
+                continue
+
+            tracks = requests.get(
+                f"https://api.deezer.com/artist/{artist_id}/top?limit=10"
+            ).json().get("data", [])
+
+            count = 0
+
+            for track in tracks:
+                if len(collected) >= nb_tracks:
+                    break
+
+                if track["id"] in seen_track_ids:
+                    continue
+
+                track["genre"] = genre_name
+                track["subgenre"] = subgenre_name
+                track["artist_name"] = artist_name
+                track["artist_id"] = artist_id
+
+                seen_track_ids.add(track["id"])
+                collected.append(track)
+
+                count += 1
+
+                # max 3 tracks par artiste
+                if count >= 3:
+                    break
+
+        if len(collected) >= nb_tracks:
+            break
+
+    _insert_tracks(collected)
+    return collected
+
+#deprecated
+# def import_charts(nb_tracks: int):
+#     response = requests.get(f"https://api.deezer.com/chart/0/tracks?limit={nb_tracks}")
+#     _insert_tracks(response.json()["data"])
+
+def import_by_artist(
+    artist_name: str,
+    nb_tracks: int,
+    genre: str,
+    subgenre: str
+):
+    search = requests.get(
+        f"https://api.deezer.com/search/artist?q={artist_name}&limit=1"
+    ).json()
+
+    if not search.get("data"):
+        return
+
+    artist = search["data"][0]
+    artist_id = artist["id"]
+
+    response = requests.get(
+        f"https://api.deezer.com/artist/{artist_id}/top?limit={nb_tracks}"
+    ).json()
+
+    tracks = response.get("data", [])
+
+    for track in tracks:
+        track["genre"] = genre
+        track["subgenre"] = subgenre
+        track["artist_name"] = artist_name
+
+    _insert_tracks(tracks)
 
 
 def get_tracks(
         nb_tracks: int,
         genre: str = None,
+        subgenre: str = None,
         artist: str = None,
         min_year: int = None,
         max_year: int = None
@@ -295,6 +382,8 @@ def get_tracks(
         numbers of tracks wanted.
     genre : str
         filter by genre
+    subgenre : str
+        filter by subgenre
     artist : str
         filter by artist
     min_year: int:
@@ -314,6 +403,9 @@ def get_tracks(
     if genre:
         conditions.append("genre = ?")
         params.append(genre)
+    if subgenre:
+        conditions.append("subgenre = ?")
+        params.append(subgenre)
     if artist:
         conditions.append("artist = ?")
         params.append(artist)

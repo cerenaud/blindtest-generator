@@ -90,6 +90,7 @@ def generate_blindtest_iterative(
     guessing_duration: int = 10,
     reveal_duration: int = 5,
     genre: str | list[str] = None,
+    subgenre: str | list[str] = None,
     min_year: int = None,
     max_year: int = None,
 ) -> str:
@@ -99,7 +100,7 @@ def generate_blindtest_iterative(
     """
     clean_db()
 
-    mp3_files = get_tracks(nb_tracks, genre, min_year=min_year, max_year=max_year)
+    mp3_files = get_tracks(nb_tracks, genre,subgenre, min_year=min_year, max_year=max_year)
     guessing_background = "data/backgrounds/turntable_25fps.mp4"
     reveal_background = "data/backgrounds/vhs_particle_25fps.mp4"
 
@@ -114,7 +115,7 @@ def generate_blindtest_iterative(
     try:
         intro = build_intro(10, intro_background, intro_text, intro_song)
         intro_path = tmp_dir / "tmp_intro.mp4"
-        intro.write_videofile(str(intro_path), fps=40)
+        intro.write_videofile(str(intro_path), fps=35)
         intro.close()
         temp_files.append(intro_path)
 
@@ -145,7 +146,7 @@ def generate_blindtest_iterative(
                 )
 
             tmp_path = tmp_dir / f"tmp_track_{track_number_counter}.mp4"
-            clip.write_videofile(str(tmp_path), fps=40)
+            clip.write_videofile(str(tmp_path), fps=35)
 
             clip.close()
             del clip
@@ -162,7 +163,7 @@ def generate_blindtest_iterative(
 
         outro = build_outro(8, outro_background, outro_song)
         outro_path = tmp_dir / "tmp_outro.mp4"
-        outro.write_videofile(str(outro_path), fps=40)
+        outro.write_videofile(str(outro_path), fps=35)
         outro.close()
         temp_files.append(outro_path)
 
@@ -170,7 +171,7 @@ def generate_blindtest_iterative(
 
         clips = [VideoFileClip(str(p)) for p in temp_files]
         final = concatenate_videoclips(clips, method="chain")
-        final.write_videofile(str(BASE_DIR / output_path), fps=40)
+        final.write_videofile(str(BASE_DIR / output_path), fps=35)
 
         return output_path
 
