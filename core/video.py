@@ -707,7 +707,7 @@ def build_intro(
     logo = logo.with_effects([FadeIn(0.8)])
 
     lets_go_text = TextClip(
-        text="C'est partit !",
+        text="C'est parti !",
         font="arial",
         font_size=140,
         color="white",

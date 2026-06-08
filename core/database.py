@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import time
 from pathlib import Path
 from moviepy import VideoFileClip
 from ai.agents import correct_release_year, is_official_clip
@@ -384,7 +385,9 @@ def get_tracks(
         subgenre: str = None,
         artist: str = None,
         min_year: int = None,
-        max_year: int = None
+        max_year: int = None,
+        min_popularity : int = None,
+        max_popularity: int = None,
 ) -> list:
     """Read into the database to get tracks for generate_blindtest() function.
 
@@ -402,6 +405,10 @@ def get_tracks(
         filter by minimum release year for a song.
     max_year: int
         filter by maximum release year for a song.
+    min_popularity : int = None
+        filter by popularity int from deezer APi, min=0
+    max_popularity : int = None
+        filter by popularity int from deezer APi, max=999999
 
     """
     conn = sqlite3.connect(DB_PATH)
@@ -427,6 +434,12 @@ def get_tracks(
     if max_year:
         conditions.append("year <= ?")
         params.append(max_year)
+    if min_popularity:
+        conditions.append("popularity >= ? ")
+        params.append(min_popularity)
+    if max_popularity:
+        conditions.append("popularity <= ? ")
+        params.append(max_popularity)
     if conditions:
         query += " AND " + " AND ".join(conditions)
 
@@ -782,9 +795,19 @@ def download_youtube_video(
     try:
         ydl_opts = { #options for yt-dlp
                 #"format": "bestvideo+bestaudio/best", #best quality but codec not generally compatible
-                "format": "bestvideo[vcodec*=avc1]+bestaudio/best", #avc1 more supported codec
+                #"format": "bestvideo[vcodec*=avc1]+bestaudio/best", #avc1 more supported codec
+                "format": "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/b",
                 "merge_output_format": "mp4",
-                "outtmpl": f"{temp_dir}/%(title)s.%(ext)s", #yt-dlp teemplate
+                "outtmpl": f"{temp_dir}/%(title)s.%(ext)s", #yt-dlp template
+
+                #download parameters
+                "socket_timeout": 60,
+                "retries": 10,
+                "fragment_retries": 10,
+                "concurrent_fragment_downloads": 3,
+
+                #"cookiesfrombrowser": ("chrome",), #doesn't seem to work
+
             }
 
         with YoutubeDL(ydl_opts) as ydl:
@@ -839,5 +862,7 @@ def download_all_youtube_videos():
 
             if url is not None:
                 download_youtube_video(track_id,url, video_path,start_time, end_time)
+
+                time.sleep(1) #in case of rate limit
         except Exception as e:
             print(f"Skipping video for {artist} - {title}: {e}")

@@ -65,9 +65,11 @@ You will need to fulfill the path in these variables:
     reveal_background = "path/to/reveal_background_video.mp4"
 ```
 
-You can then generate different Blindtest by genre,subgenre, max & min year and number of tracks per blindtest.
+You can then generate different Blindtest by genre,subgenre, max & min year, max & min popularity and number of tracks per blindtest. (More info in generate_blindtest_iterative docstring).
 
 ```python
+from core.generator import generate_blindtest_iterative
+
 generate_blindtest_iterative(
     output_path="output/blindtest_rock.mp4",
     intro_text="Rock Blindtest",

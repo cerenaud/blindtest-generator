@@ -95,6 +95,8 @@ def generate_blindtest_iterative(
     subgenre: str | list[str] = None,
     min_year: int = None,
     max_year: int = None,
+    min_popularity : int = None,
+    max_popularity: int = None,
 ) -> str:
     """Generate a blindtest video by generating every clip for every track and
     assemble at the end. This allows to create a blindtest with 30 or more tracks
@@ -138,7 +140,7 @@ def generate_blindtest_iterative(
     """
     clean_db()
 
-    mp3_files = get_tracks(nb_tracks, genre,subgenre, min_year=min_year, max_year=max_year)
+    mp3_files = get_tracks(nb_tracks, genre,subgenre, min_year=min_year, max_year=max_year,min_popularity=min_popularity,max_popularity=max_popularity)
 
     tmp_dir = BASE_DIR / "data" / "tmp_blindtest"
     tmp_dir.mkdir(parents=True, exist_ok=True)
