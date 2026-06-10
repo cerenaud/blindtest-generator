@@ -708,7 +708,7 @@ def imdb_clip_exists(
         kind = (r.get("q") or "").lower()
 
         #should remove " " when looking into strings
-        if "musicvideo" in kind and artist_to_search.lower() in title_text:# and title_to_search.lower() in title_text :
+        if ("musicvideo" in kind and artist_to_search.lower() in title_text) or ("clip" in kind and artist_to_search.lower() in title_text):# and title_to_search.lower() in title_text :
             return True
 
     return False
@@ -720,10 +720,11 @@ def get_youtube_video_url(
 ) -> str | None:
 
 
-    if country == "FR" or country == "BE":
-        is_video = imdb_clip_exists(artist_ytb, title_ytb) #search imdb
-    else:  # english
-        is_video = has_music_video_section(artist_ytb, title_ytb) #search wiki
+    # if country == "FR" or country == "BE":
+    #     is_video = imdb_clip_exists(artist_ytb, title_ytb) #search imdb
+    # else:  # english
+    #     is_video = has_music_video_section(artist_ytb, title_ytb) #search wiki
+    is_video = imdb_clip_exists(artist_ytb, title_ytb)
 
     if is_video: #there is an official clip, we take the first youtube return
         query = f"{artist_ytb} - {title_ytb} official video"
@@ -808,6 +809,12 @@ def download_youtube_video(
 
                 #"cookiesfrombrowser": ("chrome",), #doesn't seem to work
 
+                # "js_runtimes": {
+                #     "node": {
+                #         "path": "C:/Program Files/nodejs/node.exe"
+                #     }
+                # }
+
             }
 
         with YoutubeDL(ydl_opts) as ydl:
@@ -842,12 +849,14 @@ def download_all_youtube_videos():
     conn.close()
 
     start_time, end_time = 60, 75 #default
+    count = 0
     for row in rows:
         title = row[0]
         artist = row[1]
         country = row[2]
         track_id = row[3]
         current_video_path = row[4]
+        count += 1
 
         if current_video_path and Path(current_video_path).exists():
             continue
