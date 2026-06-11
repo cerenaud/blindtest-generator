@@ -694,17 +694,17 @@ def build_intro(
     size = (1600, 200)
     ).with_position(("center", 450)).with_start(1.5).with_duration(4)
 
-    logo = (
-        ImageClip("data/backgrounds/logo_v1.PNG")
-        .resized(height=350)
-        .with_position(("center", 550))
-        .with_start(1.5)
-        .with_duration(4)
-    )
+    # logo = (
+    #     ImageClip("data/backgrounds/logo_v1.PNG")
+    #     .resized(height=350)
+    #     .with_position(("center", 550))
+    #     .with_start(1.5)
+    #     .with_duration(4)
+    # )
 
     title = title.with_effects([FadeIn(0.8)])
     subtitle = subtitle.with_effects([FadeIn(0.8)])
-    logo = logo.with_effects([FadeIn(0.8)])
+    #logo = logo.with_effects([FadeIn(0.8)])
 
     lets_go_text = TextClip(
         text="C'est parti !",
@@ -721,7 +721,7 @@ def build_intro(
         overlay,
         title,
         subtitle,
-        logo,
+        #logo,
         lets_go_text
     ]).with_duration(intro_duration)
 
@@ -782,16 +782,16 @@ def build_outro(
         size=(1600,150)
     ).with_position(("center",250)).with_start(0.5).with_duration(5)
 
-    logo = (
-        ImageClip("data/backgrounds/logo_v1.PNG")
-        .resized(height=350)
-        .with_position(("center", 550))
-        .with_start(1.5)
-        .with_duration(4)
-    )
+    # logo = (
+    #     ImageClip("data/backgrounds/logo_v1.PNG")
+    #     .resized(height=350)
+    #     .with_position(("center", 550))
+    #     .with_start(1.5)
+    #     .with_duration(4)
+    # )
 
     text = text.with_effects([FadeIn(0.8)])
-    logo = logo.with_effects([FadeIn(0.8)])
+    #logo = logo.with_effects([FadeIn(0.8)])
 
 
     outro = CompositeVideoClip([
