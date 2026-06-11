@@ -774,7 +774,7 @@ def build_outro(
     ).with_opacity(0.4).with_duration(outro_duration)
 
     text = TextClip(
-        text="MERCI D'AVOIR REGARDE !",
+        text="MERCI D'AVOIR REGARDÉ !",
         font="arial",
         font_size=100,
         color="white",
