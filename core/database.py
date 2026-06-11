@@ -388,6 +388,8 @@ def get_tracks(
         max_year: int = None,
         min_popularity : int = None,
         max_popularity: int = None,
+        include_country: list[str] = None,
+        exclude_country: list[str] = None,
 ) -> list:
     """Read into the database to get tracks for generate_blindtest() function.
 
@@ -409,6 +411,10 @@ def get_tracks(
         filter by popularity int from deezer APi, min=0
     max_popularity : int = None
         filter by popularity int from deezer APi, max=999999
+    include_country: list[str] = None
+        include country
+    exclude_country: list[str] = None
+        exclude country
 
     """
     conn = sqlite3.connect(DB_PATH)
@@ -440,6 +446,15 @@ def get_tracks(
     if max_popularity:
         conditions.append("popularity <= ? ")
         params.append(max_popularity)
+    if include_country:
+        placeholders = ",".join(["?"] * len(include_country))
+        conditions.append(f"country IN ({placeholders})")
+        params.extend(include_country)
+
+    if exclude_country:
+        placeholders = ",".join(["?"] * len(exclude_country))
+        conditions.append(f"country NOT IN ({placeholders})")
+        params.extend(exclude_country)
     if conditions:
         query += " AND " + " AND ".join(conditions)
 
