@@ -161,18 +161,17 @@ def _insert_tracks(tracks: list):
             album_cover_url,
         ))
 
-        if any(
-            word.lower() in track["title"].lower()
-            for word in [
-                "anniversary",
-                "remaster",
-                "anniversaire",
-                "deluxe",
-                "remastered",
-                "best",
-                "edition",
-            ]
-        ):
+        keywords = [
+            "anniversary",
+            "remaster",
+            "anniversaire",
+            "deluxe",
+            "remastered",
+            "best",
+            "edition",
+        ]
+
+        if any(word in track["title"].lower() for word in keywords) or any(word in track["album"]["title"].lower() for word in keywords):
             data["songs"].append({
                 "name": track["title_short"],
                 "artist": track["artist"]["name"],
@@ -890,3 +889,65 @@ def download_all_youtube_videos():
                 time.sleep(1) #in case of rate limit
         except Exception as e:
             print(f"Skipping video for {artist} - {title}: {e}")
+
+
+#extracting year correction from _insert_tracks() to replay it on any db
+KEYWORDS = [
+    "anniversary",
+    "remaster",
+    "anniversaire",
+    "deluxe",
+    "remastered",
+    "best",
+    "edition",
+]
+
+def needs_year_correction(track_title: str, album_title: str) -> bool:
+    title = (track_title or "").lower()
+    album = (album_title or "").lower()
+
+    return any(k in title for k in KEYWORDS) or any(k in album for k in KEYWORDS)
+
+def correct_years_in_database():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT deezer_id, title, artist, album, year
+        FROM tracks
+    """)
+
+    rows = cursor.fetchall()
+
+    data = {"songs": []}
+
+    for deezer_id, title, artist, album, year in rows:
+
+        if needs_year_correction(title, album):
+            data["songs"].append({
+                "id": deezer_id,
+                "name": title,
+                "artist": artist,
+                "release_year": year
+            })
+
+    if not data["songs"]:
+        print("No tracks to correct.")
+        return
+
+    corrected = correct_release_year(data).model_dump()
+
+    for song in corrected["songs"]:
+        cursor.execute("""
+            UPDATE tracks
+            SET year = ?
+            WHERE deezer_id = ?
+        """, (
+            song["release_year"],
+            song["id"]
+        ))
+
+    conn.commit()
+    conn.close()
+
+    print(f"Corrected {len(corrected['songs'])} tracks")

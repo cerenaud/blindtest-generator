@@ -311,7 +311,7 @@ def generate_blindtest_iterative_us(
     track_number_counter = 1
 
     try:
-        intro = build_intro(10, intro_background, intro_text, intro_song)
+        intro = build_intro_us(15, intro_background, intro_text, intro_song)
         intro_path = tmp_dir / "tmp_intro.mp4"
         intro.write_videofile(str(intro_path), fps=35)
         intro.close()
@@ -323,7 +323,7 @@ def generate_blindtest_iterative_us(
             track = AudioTrack.from_db(mp3)
 
             if track.video_path:
-                clip, tmp = build_clip_with_video_and_background(
+                clip, tmp = build_clip_with_video_and_background_us(
                     track,
                     track_number_counter,
                     nb_tracks,
@@ -333,7 +333,7 @@ def generate_blindtest_iterative_us(
                     reveal_duration
                 )
             else:
-                clip, tmp = build_clip_with_background(
+                clip, tmp = build_clip_with_background_us(
                     track,
                     track_number_counter,
                     nb_tracks,
@@ -359,7 +359,7 @@ def generate_blindtest_iterative_us(
             temp_files.append(tmp_path)
             track_number_counter += 1
 
-        outro = build_outro(8, outro_background, outro_song)
+        outro = build_outro_us(13, outro_background, outro_song)
         outro_path = tmp_dir / "tmp_outro.mp4"
         outro.write_videofile(str(outro_path), fps=35)
         outro.close()
