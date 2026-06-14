@@ -1202,7 +1202,7 @@ def build_intro_us(
         color="white",
         method="label",
         size=(1600,150)
-    ).with_position(("center", 250)).with_start(0.5).with_duration(5)
+    ).with_position(("center", 150)).with_start(0.5).with_duration(5)
 
     subtitle = TextClip(
         text=intro_text,
@@ -1211,14 +1211,14 @@ def build_intro_us(
         color="white",
         method="label",
     size = (1600, 200)
-    ).with_position(("center", 450)).with_start(1.5).with_duration(4)
+    ).with_position(("center", 350)).with_start(1.5).with_duration(4)
 
     logo = (
-        ImageClip("data/backgrounds/logo_v1.PNG")
+        ImageClip("data/backgrounds/logo_us.jpg")
         .resized(height=350)
         .with_position(("center", 550))
-        .with_start(1.5)
-        .with_duration(4)
+        .with_start(2)
+        .with_duration(3.5)
     )
 
     title = title.with_effects([FadeIn(0.8)])
@@ -1260,7 +1260,7 @@ def build_intro_us(
         overlay,
         title,
         subtitle,
-        #logo,
+        logo,
         rules1,
         rules2,
         lets_go_text

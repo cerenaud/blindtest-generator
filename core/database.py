@@ -380,8 +380,8 @@ def import_by_artist(
 
 def get_tracks(
         nb_tracks: int,
-        genre: str = None,
-        subgenre: str = None,
+        genre: str | list[str] = None,
+        subgenre: str | list[str] = None,
         artist: str = None,
         min_year: int = None,
         max_year: int = None,
@@ -425,11 +425,21 @@ def get_tracks(
     # optionnals filters
     conditions = []
     if genre:
-        conditions.append("genre = ?")
-        params.append(genre)
+        if isinstance(genre, list):
+            placeholders = ",".join(["?"] * len(genre))
+            conditions.append(f"genre IN ({placeholders})")
+            params.extend(genre)
+        else:
+            conditions.append("genre = ?")
+            params.append(genre)
     if subgenre:
-        conditions.append("subgenre = ?")
-        params.append(subgenre)
+        if isinstance(subgenre, list):
+            placeholders = ",".join(["?"] * len(subgenre))
+            conditions.append(f"subgenre IN ({placeholders})")
+            params.extend(subgenre)
+        else:
+            conditions.append("subgenre = ?")
+            params.append(subgenre)
     if artist:
         conditions.append("artist = ?")
         params.append(artist)
