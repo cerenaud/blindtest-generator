@@ -55,11 +55,30 @@ def correct_release_year(
          "Voici un dict à corriger :\n{input}")
     ])
 
+    # prompt = ChatPromptTemplate.from_messages([
+    # ("system",
+    #  """
+    # Tu es un expert en discographie musicale.
+    #
+    # Ta tâche :
+    # - retrouver l'année ORIGINALE de sortie de la chanson (pas des remasters, ni compilations)
+    # - tu dois ignorer les versions deluxe, remastered, live ou rééditions
+    #
+    # RÈGLES STRICTES :
+    # - Retourne uniquement les données structurées
+    # - Ne pas expliquer
+    #
+    # IMPORTANT :
+    # On veut l'année de première sortie officielle de la chanson.
+    # """)
+    # ])
+
     chain = prompt | structured_llm
 
     return chain.invoke({
         "input": json.dumps(data)
     })
+
 
 #The following are different agent to ask if there is an official video
 #known for any songs, and also ask the url if it exists.

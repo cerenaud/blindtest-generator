@@ -97,6 +97,8 @@ def generate_blindtest_iterative(
     max_year: int = None,
     min_popularity : int = None,
     max_popularity: int = None,
+    include_country: list[str] = None,
+    exclude_country: list[str] = None,
 ) -> str:
     """Generate a blindtest video by generating every clip for every track and
     assemble at the end. This allows to create a blindtest with 30 or more tracks
@@ -132,6 +134,10 @@ def generate_blindtest_iterative(
         minimum release year for a music to appear in the blindtest.
     max_year: int:
         maximum release year for a music to appear in the blindtest.
+    include_country: list[str] = None
+        include country
+    exclude_country: list[str] = None
+        exclude country
 
     Returns
     -------
@@ -140,7 +146,7 @@ def generate_blindtest_iterative(
     """
     clean_db()
 
-    mp3_files = get_tracks(nb_tracks, genre,subgenre, min_year=min_year, max_year=max_year,min_popularity=min_popularity,max_popularity=max_popularity)
+    mp3_files = get_tracks(nb_tracks, genre,subgenre, min_year=min_year, max_year=max_year,min_popularity=min_popularity,max_popularity=max_popularity,exclude_country=exclude_country,include_country=include_country)
 
     tmp_dir = BASE_DIR / "data" / "tmp_blindtest"
     tmp_dir.mkdir(parents=True, exist_ok=True)
