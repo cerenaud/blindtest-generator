@@ -1,4 +1,4 @@
-from core.database import init_db, import_by_genre, download_all_previews, download_all_album_covers, \
+from core.database import init_db, import_by_genre, import_movies_series, download_all_previews, download_all_album_covers, \
     download_all_youtube_videos
 from core.generator import generate_blindtest_iterative
 
@@ -16,6 +16,10 @@ if __name__ == "__main__":
     import_by_genre("metal",20) #max : 858
     import_by_genre("country",20) #max : 204
     import_by_genre("funk_soul",20) #max : 222
+
+    #importing movies/series themes: 1 track per query entry (see genres.py), not 3 per artist
+    import_movies_series("movies",20) #max : 419
+    import_movies_series("series",20) #max : 140
 
     #downloading song previews and album covers for all music in the database.
     download_all_previews()

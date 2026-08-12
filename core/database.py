@@ -230,6 +230,82 @@ def search_and_import(
 
     _insert_tracks(tracks)
 
+_SUSPICIOUS_ARTIST_KEYWORDS = ["cover", "tribute", "orchestra", "karaoke", "instrumental"]
+
+def import_movies_series(
+        genre_name: str,
+        nb_tracks: int
+) -> list:
+    """
+    Import movie/series themes from Deezer using the query -> display title
+    mapping from genres.py.
+
+    Unlike import_by_genre (which searches by artist and takes their top
+    tracks), this searches directly for the theme/track title, since a movie
+    composer's Deezer "top tracks" rarely map to one specific film. The
+    artist field is overwritten with the movie/show title before insertion,
+    so the blindtest reveal shows the title rather than the composer name.
+
+    Parameters
+    ----------
+    genre_name : str
+        "movies" or "series".
+    nb_tracks : int
+        max number of tracks to import for this genre.
+
+    Returns
+    -------
+    list
+        List of tracks fetched from deezer API.
+    """
+    genre_name = genre_name.lower()
+
+    subgenres = GENRE_TREE.get(genre_name)
+    if subgenres is None:
+        raise ValueError(f"Unknown genre: {genre_name}")
+
+    collected = []
+
+    for subgenre_name, entries in subgenres.items():
+
+        for query, display_title in entries.items():
+
+            if len(collected) >= nb_tracks:
+                break
+
+            response = requests.get(
+                f"https://api.deezer.com/search?q={query}&limit=3"
+            ).json()
+
+            candidates = response.get("data", [])
+
+            track = None
+            for candidate in candidates:
+                if "artist" not in candidate:
+                    continue
+                artist_name = candidate["artist"]["name"].lower()
+                if any(keyword in artist_name for keyword in _SUSPICIOUS_ARTIST_KEYWORDS):
+                    continue
+                track = candidate
+                break
+
+            if track is None:
+                print(f"[import_movies_series] no clean result for {query!r} ({display_title}), skipped")
+                continue
+
+            track["genre"] = genre_name
+            track["subgenre"] = subgenre_name
+            track["artist"]["name"] = display_title
+            track["artist_name"] = display_title
+
+            collected.append(track)
+
+        if len(collected) >= nb_tracks:
+            break
+
+    _insert_tracks(collected)
+    return collected
+
 def _deezer_search_artist_id(
         artist_name: str
 )-> int | None:

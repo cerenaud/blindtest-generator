@@ -18,6 +18,7 @@ def generate_blindtest(
     genre: str | list[str] = None ,
     min_year: int = None,
     max_year: int = None,
+    show_year: bool = False,
         ) -> str:
     """Generate a blindtest video with parameters and music from db.
 
@@ -47,6 +48,8 @@ def generate_blindtest(
         minimum release year for a music to appear in the blindtest.
     max_year: int:
         maximum release year for a music to appear in the blindtest.
+    show_year: bool
+        whether to display the release year alongside the reveal label.
 
     Returns
     -------
@@ -62,6 +65,7 @@ def generate_blindtest(
     reveal_background = "data/backgrounds/vhs_particle_25fps.mp4"
     for i in range(len(mp3_files)):
         track = AudioTrack.from_db(mp3_files[i])
+        track.show_year = show_year
         # will need to choose, use build_clip_with_video only if the clip exist, else use build_clip to use album cover
         if track.video_path is not None:
             video_path = track.video_path
@@ -99,6 +103,7 @@ def generate_blindtest_iterative(
     max_popularity: int = None,
     include_country: list[str] = None,
     exclude_country: list[str] = None,
+    show_year: bool = False,
 ) -> str:
     """Generate a blindtest video by generating every clip for every track and
     assemble at the end. This allows to create a blindtest with 30 or more tracks
@@ -138,6 +143,8 @@ def generate_blindtest_iterative(
         include country
     exclude_country: list[str] = None
         exclude country
+    show_year: bool
+        whether to display the release year alongside the reveal label.
 
     Returns
     -------
@@ -167,6 +174,7 @@ def generate_blindtest_iterative(
 
         for mp3 in mp3_files:
             track = AudioTrack.from_db(mp3)
+            track.show_year = show_year
 
             if track.video_path:
                 clip, tmp = build_clip_with_video_and_background(
@@ -259,6 +267,7 @@ def generate_blindtest_iterative_us(
     max_popularity: int = None,
     include_country: list[str] = None,
     exclude_country: list[str] = None,
+    show_year: bool = False,
 ) -> str:
     """Generate a blindtest video by generating every clip for every track and
     assemble at the end. This allows to create a blindtest with 30 or more tracks
@@ -298,6 +307,8 @@ def generate_blindtest_iterative_us(
         include country
     exclude_country: list[str] = None
         exclude country
+    show_year: bool
+        whether to display the release year alongside the reveal label.
 
     Returns
     -------
@@ -327,6 +338,7 @@ def generate_blindtest_iterative_us(
 
         for mp3 in mp3_files:
             track = AudioTrack.from_db(mp3)
+            track.show_year = show_year
 
             if track.video_path:
                 clip, tmp = build_clip_with_video_and_background_us(

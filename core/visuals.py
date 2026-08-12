@@ -72,22 +72,19 @@ def get_font_size(
     return font
 
 def make_reveal_frame(
-        artist: str,
-        title: str,
+        label: str,
         album_cover_path: str,
         frame_resolution: tuple[int,int] = (1920,1080)
 ) -> Image.Image :
     """Create an image frame for the reveal part of a blindtest.
 
     Displays a dark blue background with a placeholder rectangle,
-    the artist name and track title centered at the bottom.
+    the reveal label centered at the bottom.
 
     Parameters
     ----------
-    artist : str
-        Name of the artist.
-    title : str
-        Title of the track.
+    label : str
+        Text to display (see AudioTrack.reveal_label).
     album_cover_path : str
         Path to the album cover image (.jpg).
     frame_resolution : tuple
@@ -133,7 +130,7 @@ def make_reveal_frame(
     rect_x1 = int((width - album_cover.width)/2)
     img.paste(album_cover, (rect_x1, rect_y1))
 
-    text = f"{artist} - {title}"
+    text = label
     font = get_font_size(draw, text, 1000, "arial.ttf", 65)  # max_width = 1000px
     draw.text((width // 2, int(height * 0.85)), text, fill=(255, 255, 255), font=font, anchor="mm")
 

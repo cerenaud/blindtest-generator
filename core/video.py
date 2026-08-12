@@ -76,7 +76,7 @@ def build_clip(
         return np.array(frame)
 
     def make_reveal_frame_to_numpy(_) -> np.ndarray:
-        frame = make_reveal_frame(track.artist, track.title, track.album_cover_path)
+        frame = make_reveal_frame(track.reveal_label(), track.album_cover_path)
         return np.array(frame)
 
     guessing_clip = VideoClip(make_guessing_frame_to_numpy, duration=guessing_duration)
@@ -183,9 +183,9 @@ def build_clip_with_video(
 
     #text to add to reveal video
     shadow = TextClip(
-        text=f"{track.artist} - {track.title}",
+        text=track.reveal_label(),
         font="arial",
-        font_size= 75 if len(f"{track.artist} - {track.title}") < 30 else 55,
+        font_size= 75 if len(track.reveal_label()) < 30 else 55,
         color="black",
         method="label",
         text_align="center",
@@ -193,9 +193,9 @@ def build_clip_with_video(
     ).with_position(("center", 805)).with_duration(reveal_duration)
 
     txt_clip = TextClip(
-        text=f"{track.artist} - {track.title}",
+        text=track.reveal_label(),
         font="arial",
-        font_size= 75 if len(f"{track.artist} - {track.title}") < 30 else 55,
+        font_size= 75 if len(track.reveal_label()) < 30 else 55,
         color="white",
         method="label",
         text_align="center",
@@ -395,9 +395,9 @@ def build_clip_with_background(
     )
 
     shadow = TextClip(
-        text=f"{track.artist} - {track.title}",
+        text=track.reveal_label(),
         font="arial",
-        font_size=75 if len(f"{track.artist} - {track.title}") < 30 else 55,
+        font_size=75 if len(track.reveal_label()) < 30 else 55,
         color="black",
         method="label",
         text_align="center",
@@ -405,9 +405,9 @@ def build_clip_with_background(
     ).with_position(("center", 805)).with_duration(reveal_duration)
 
     txt_clip = TextClip(
-        text=f"{track.artist} - {track.title}",
+        text=track.reveal_label(),
         font="arial",
-        font_size=75 if len(f"{track.artist} - {track.title}") < 30 else 55,
+        font_size=75 if len(track.reveal_label()) < 30 else 55,
         color="white",
         method="label",
         text_align="center",
@@ -616,9 +616,9 @@ def build_clip_with_background_us(
     )
 
     shadow = TextClip(
-        text=f"{track.artist} - {track.title}",
+        text=track.reveal_label(),
         font="arial",
-        font_size=75 if len(f"{track.artist} - {track.title}") < 30 else 55,
+        font_size=75 if len(track.reveal_label()) < 30 else 55,
         color="black",
         method="label",
         text_align="center",
@@ -626,9 +626,9 @@ def build_clip_with_background_us(
     ).with_position(("center", 805)).with_duration(reveal_duration)
 
     txt_clip = TextClip(
-        text=f"{track.artist} - {track.title}",
+        text=track.reveal_label(),
         font="arial",
-        font_size=75 if len(f"{track.artist} - {track.title}") < 30 else 55,
+        font_size=75 if len(track.reveal_label()) < 30 else 55,
         color="white",
         method="label",
         text_align="center",
@@ -824,9 +824,9 @@ def build_clip_with_video_and_background(
 
     #text to add to reveal video
     shadow = TextClip(
-        text=f"{track.artist} - {track.title}",
+        text=track.reveal_label(),
         font="arial",
-        font_size= 75 if len(f"{track.artist} - {track.title}") < 30 else 55,
+        font_size= 75 if len(track.reveal_label()) < 30 else 55,
         color="black",
         method="label",
         text_align="center",
@@ -834,9 +834,9 @@ def build_clip_with_video_and_background(
     ).with_position(("center", 805)).with_duration(reveal_duration)
 
     txt_clip = TextClip(
-        text=f"{track.artist} - {track.title}",
+        text=track.reveal_label(),
         font="arial",
-        font_size= 75 if len(f"{track.artist} - {track.title}") < 30 else 55,
+        font_size= 75 if len(track.reveal_label()) < 30 else 55,
         color="white",
         method="label",
         text_align="center",
@@ -1023,9 +1023,9 @@ def build_clip_with_video_and_background_us(
 
     #text to add to reveal video
     shadow = TextClip(
-        text=f"{track.artist} - {track.title}",
+        text=track.reveal_label(),
         font="arial",
-        font_size= 75 if len(f"{track.artist} - {track.title}") < 30 else 55,
+        font_size= 75 if len(track.reveal_label()) < 30 else 55,
         color="black",
         method="label",
         text_align="center",
@@ -1033,9 +1033,9 @@ def build_clip_with_video_and_background_us(
     ).with_position(("center", 805)).with_duration(reveal_duration)
 
     txt_clip = TextClip(
-        text=f"{track.artist} - {track.title}",
+        text=track.reveal_label(),
         font="arial",
-        font_size= 75 if len(f"{track.artist} - {track.title}") < 30 else 55,
+        font_size= 75 if len(track.reveal_label()) < 30 else 55,
         color="white",
         method="label",
         text_align="center",

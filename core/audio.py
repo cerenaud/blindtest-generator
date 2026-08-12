@@ -45,6 +45,9 @@ class AudioTrack:
 
         self.audio = AudioSegment.from_mp3(self.path)
         self.total_duration = len(self.audio)
+        self.genre = None
+        self.year = None
+        self.show_year = False
 
     @classmethod
     def from_db(
@@ -78,7 +81,7 @@ class AudioTrack:
         instance.artist = db_row[2]
         instance.album = db_row[3]
         instance.genre = db_row[4]
-        instance.genre = db_row[5]
+        instance.subgenre = db_row[5]
         instance.year = db_row[6]
         instance.popularity = db_row[7]
         instance.duration = db_row[8]
@@ -87,6 +90,7 @@ class AudioTrack:
         #skip album_url
         instance.album_cover_path = db_row[12]
         instance.video_path = db_row[13]
+        instance.show_year = False
         try:
             instance.audio = AudioSegment.from_mp3(instance.path)
             instance.total_duration = len(instance.audio)
@@ -134,6 +138,27 @@ class AudioTrack:
         max_start = self.total_duration - duration_ms
         start = random.randint(0, max_start)
         return self.audio[start:start + duration_ms]
+
+    def reveal_label(self) -> str:
+        """Build the text to display on the reveal frame.
+
+        For "movies"/"series" genres, `artist` holds the movie/show title
+        (set at import time), so only that is shown instead of "artist - title".
+
+        Returns
+        -------
+        str
+            The label to display, with the year appended if `show_year` is set.
+        """
+        if self.genre in ("movies", "series"):
+            label = self.artist
+        else:
+            label = f"{self.artist} - {self.title}"
+
+        if self.show_year and self.year:
+            label += f" ({self.year})"
+
+        return label
 
 
 
