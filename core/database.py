@@ -232,19 +232,54 @@ def search_and_import(
 
 _SUSPICIOUS_ARTIST_KEYWORDS = ["cover", "tribute", "orchestra", "karaoke", "instrumental"]
 
+def _artist_matches_composer(artist_name: str, expected_composer: str) -> bool:
+    """Check that a Deezer artist name plausibly matches the expected composer/artist.
+
+    Compares against the last word of expected_composer (usually the surname,
+    the most distinctive part), rather than requiring an exact match, since
+    Deezer sometimes credits composers with slight name variations.
+    """
+    last_word = expected_composer.strip().split()[-1].lower()
+    return last_word in artist_name.lower()
+
+_TITLE_MATCH_STOPWORDS = {"theme", "main", "the", "from", "song", "of"}
+
+def _title_matches_query(track_title: str, theme_query: str) -> bool:
+    """Check that a returned track title plausibly matches the searched theme.
+
+    The same composer can have dozens of unrelated tracks on Deezer, so
+    matching the artist alone isn't enough (e.g. a Lalo Schifrin search could
+    return a Mission: Impossible cue instead of the Bullitt one asked for).
+    Requires at least one distinctive word (len > 3, ignoring generic words
+    like "theme") from the query to appear in the track title.
+    """
+    words = [w.strip(",:()'\"").lower() for w in theme_query.split()]
+    significant = [w for w in words if len(w) > 3 and w not in _TITLE_MATCH_STOPWORDS]
+    if not significant:
+        return True
+    title_lower = track_title.lower()
+    return any(w in title_lower for w in significant)
+
 def import_movies_series(
         genre_name: str,
         nb_tracks: int
 ) -> list:
     """
-    Import movie/series themes from Deezer using the query -> display title
-    mapping from genres.py.
+    Import movie/series themes from Deezer using the theme_query -> (display
+    title, expected composer/artist) mapping from genres.py.
 
     Unlike import_by_genre (which searches by artist and takes their top
     tracks), this searches directly for the theme/track title, since a movie
     composer's Deezer "top tracks" rarely map to one specific film. The
     artist field is overwritten with the movie/show title before insertion,
     so the blindtest reveal shows the title rather than the composer name.
+
+    The actual Deezer query is `f"{theme_query} {expected_composer}"`. A
+    result is only accepted if its artist name doesn't look like a cover/
+    tribute/karaoke act, plausibly matches the expected composer (see
+    _artist_matches_composer), AND the track title plausibly matches the
+    theme_query (see _title_matches_query) -- composer matching alone isn't
+    enough, since the same composer can have many unrelated tracks on Deezer.
 
     Parameters
     ----------
@@ -268,13 +303,22 @@ def import_movies_series(
 
     for subgenre_name, entries in subgenres.items():
 
-        for query, display_title in entries.items():
+        for theme_query, value in entries.items():
 
             if len(collected) >= nb_tracks:
                 break
 
+            # TODO: temporary compatibility shim while genres.py subgenres are migrated
+            # from {query: display_title} to {query: (display_title, expected_composer)}.
+            # Remove once every movies/series subgenre has been converted.
+            if isinstance(value, tuple):
+                display_title, expected_composer = value
+            else:
+                display_title, expected_composer = value, None
+
+            search_query = f"{theme_query} {expected_composer}" if expected_composer else theme_query
             response = requests.get(
-                f"https://api.deezer.com/search?q={query}&limit=3"
+                f"https://api.deezer.com/search?q={search_query}&limit=5"
             ).json()
 
             candidates = response.get("data", [])
@@ -286,11 +330,15 @@ def import_movies_series(
                 artist_name = candidate["artist"]["name"].lower()
                 if any(keyword in artist_name for keyword in _SUSPICIOUS_ARTIST_KEYWORDS):
                     continue
+                if expected_composer and not _artist_matches_composer(artist_name, expected_composer):
+                    continue
+                if not _title_matches_query(candidate["title"], theme_query):
+                    continue
                 track = candidate
                 break
 
             if track is None:
-                print(f"[import_movies_series] no clean result for {query!r} ({display_title}), skipped")
+                print(f"[import_movies_series] no clean result for {theme_query!r} ({display_title}), skipped")
                 continue
 
             track["genre"] = genre_name
