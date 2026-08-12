@@ -8,12 +8,14 @@ if __name__ == "__main__":
 
     #importing music by genre to fill the database massively and correct
     #it will import 3 tracks per artist from a pre-filled selection of artist to ensure genre validity
-    import_by_genre("rock",20) #max number of tracks to import for this genre : 939
-    import_by_genre("pop",20) #max : 768
-    import_by_genre("rap",20) #max : 600
-    import_by_genre("chanson_fr",20) #max : 663
-    import_by_genre("electro",20) #max : 768
-    import_by_genre("metal",20) #max : 759
+    import_by_genre("rock",20) #max number of tracks to import for this genre : 1110
+    import_by_genre("pop",20) #max : 774
+    import_by_genre("rap",20) #max : 762
+    import_by_genre("chanson_fr",20) #max : 744
+    import_by_genre("electro",20) #max : 891
+    import_by_genre("metal",20) #max : 858
+    import_by_genre("country",20) #max : 204
+    import_by_genre("funk_soul",20) #max : 222
 
     #downloading song previews and album covers for all music in the database.
     download_all_previews()
