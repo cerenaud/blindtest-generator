@@ -174,17 +174,19 @@ au format v2 `{query: (titre, compositeur)}`, avec vérification live) :
 | thriller | movies | ✅ migré + vérifié | 28 → 22 |
 | western | movies | ✅ migré + vérifié | 22 → 19 |
 | musical | movies | ✅ migré + vérifié | 26 → 26 |
-| series_sci_fi | series | ⏳ à faire | 24 |
-| series_fantasy | series | ⏳ à faire | 16 |
-| series_horreur | series | ⏳ à faire | 11 |
-| series_thriller_policier | series | ⏳ à faire | 26 |
-| series_drame | series | ⏳ à faire | 27 |
-| series_comedie_sitcom | series | ⏳ à faire | 19 |
-| series_animation | series | ⏳ à faire | 17 |
+| series_sci_fi | series | ✅ migré + vérifié | 24 → 22 |
+| series_fantasy | series | ✅ migré + vérifié | 16 → 13 |
+| series_horreur | series | ✅ migré + vérifié | 11 → 10 |
+| series_thriller_policier | series | ✅ migré + vérifié | 26 → 17 |
+| series_drame | series | ✅ migré + vérifié | 27 → 19 |
+| series_comedie_sitcom | series | ✅ migré + vérifié | 19 → 12 |
+| series_animation | series | ✅ migré + vérifié | 17 → 11 |
 
-**Movies terminé** : 419 → 370 entrées (17/17 sous-genres migrés et
-vérifiés). Reste les 7 sous-genres series.
+**Migration terminée (12/08/2026)** : 24/24 sous-genres migrés et vérifiés
+(17 movies + 7 series). Movies : 419 → 370 entrées. Series : 140 → 104
+entrées. Total : 559 → 474 entrées, 100% vérifiées en direct sur l'API
+Deezer (artiste + titre du morceau).
 
-Une fois tous les sous-genres migrés, retirer le shim de compatibilité v1/v2
-dans `import_movies_series` (commentaire `# TODO: temporary compatibility
-shim` dans `core/database.py`).
+Le shim de compatibilité v1/v2 a été retiré de `import_movies_series`
+(`core/database.py`) puisque tous les sous-genres sont maintenant au format
+v2 `{query: (titre, compositeur)}`.

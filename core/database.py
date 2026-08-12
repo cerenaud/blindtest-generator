@@ -303,20 +303,12 @@ def import_movies_series(
 
     for subgenre_name, entries in subgenres.items():
 
-        for theme_query, value in entries.items():
+        for theme_query, (display_title, expected_composer) in entries.items():
 
             if len(collected) >= nb_tracks:
                 break
 
-            # TODO: temporary compatibility shim while genres.py subgenres are migrated
-            # from {query: display_title} to {query: (display_title, expected_composer)}.
-            # Remove once every movies/series subgenre has been converted.
-            if isinstance(value, tuple):
-                display_title, expected_composer = value
-            else:
-                display_title, expected_composer = value, None
-
-            search_query = f"{theme_query} {expected_composer}" if expected_composer else theme_query
+            search_query = f"{theme_query} {expected_composer}"
             response = requests.get(
                 f"https://api.deezer.com/search?q={search_query}&limit=5"
             ).json()
