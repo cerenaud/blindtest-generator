@@ -465,6 +465,7 @@ def get_tracks(
         max_popularity: int = None,
         include_country: list[str] = None,
         exclude_country: list[str] = None,
+        max_per_artist: int | None = 2,
 ) -> list:
     """Read into the database to get tracks for generate_blindtest() function.
 
@@ -490,8 +491,21 @@ def get_tracks(
         include country
     exclude_country: list[str] = None
         exclude country
+    max_per_artist : int | None = 2
+        maximum number of times the same artist can appear in the result.
+        Pass None to disable the cap (old behaviour).
 
+    Raises
+    ------
+    ValueError
+        If max_per_artist is not a positive integer, or if the cap makes it
+        impossible to reach nb_tracks (fewer tracks available than requested).
     """
+    if max_per_artist is not None and max_per_artist <= 0:
+        raise ValueError(
+            "max_per_artist must be a positive integer, or None to disable the cap "
+            "(0 would literally exclude every track)."
+        )
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
@@ -543,13 +557,34 @@ def get_tracks(
     if conditions:
         query += " AND " + " AND ".join(conditions)
 
-    query += " ORDER BY RANDOM() LIMIT ?"
+    if max_per_artist is not None:
+        query = f"""
+            WITH ranked AS (
+                SELECT *, ROW_NUMBER() OVER (PARTITION BY artist ORDER BY RANDOM()) AS rn
+                FROM ({query})
+            )
+            SELECT id, title, artist, album, genre, subgenre, year, popularity,
+                   duration, country, preview_path, album_cover_url,
+                   album_cover_path, video_path, deezer_id
+            FROM ranked WHERE rn <= ? ORDER BY RANDOM()
+        """
+        params.append(max_per_artist)
+    else:
+        query += " ORDER BY RANDOM()"
+    query += " LIMIT ?"
     params.append(nb_tracks)
 
     cursor.execute(query, params)
     rows = cursor.fetchall()
 
     conn.close()
+
+    if max_per_artist is not None and len(rows) < nb_tracks:
+        raise ValueError(
+            f"Only {len(rows)} track(s) available with max_per_artist={max_per_artist} "
+            f"(wanted {nb_tracks}). Increase max_per_artist or set it to None to disable the cap."
+        )
+
     return rows
 
 

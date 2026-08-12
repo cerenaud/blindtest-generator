@@ -19,6 +19,7 @@ def generate_blindtest(
     min_year: int = None,
     max_year: int = None,
     show_year: bool = False,
+    max_per_artist: int | None = 2,
         ) -> str:
     """Generate a blindtest video with parameters and music from db.
 
@@ -50,6 +51,9 @@ def generate_blindtest(
         maximum release year for a music to appear in the blindtest.
     show_year: bool
         whether to display the release year alongside the reveal label.
+    max_per_artist: int | None
+        maximum number of times the same artist can appear in the blindtest.
+        Pass None to disable the cap.
 
     Returns
     -------
@@ -58,7 +62,7 @@ def generate_blindtest(
     """
     clean_db()
 
-    mp3_files = get_tracks(nb_tracks,genre,min_year=min_year,max_year=max_year)
+    mp3_files = get_tracks(nb_tracks,genre,min_year=min_year,max_year=max_year,max_per_artist=max_per_artist)
     clips = []
     track_number_counter = 1
     guessing_background = "data/backgrounds/turntable_25fps.mp4"
@@ -104,6 +108,7 @@ def generate_blindtest_iterative(
     include_country: list[str] = None,
     exclude_country: list[str] = None,
     show_year: bool = False,
+    max_per_artist: int | None = 2,
 ) -> str:
     """Generate a blindtest video by generating every clip for every track and
     assemble at the end. This allows to create a blindtest with 30 or more tracks
@@ -145,6 +150,9 @@ def generate_blindtest_iterative(
         exclude country
     show_year: bool
         whether to display the release year alongside the reveal label.
+    max_per_artist: int | None
+        maximum number of times the same artist can appear in the blindtest.
+        Pass None to disable the cap.
 
     Returns
     -------
@@ -153,7 +161,7 @@ def generate_blindtest_iterative(
     """
     clean_db()
 
-    mp3_files = get_tracks(nb_tracks, genre,subgenre, min_year=min_year, max_year=max_year,min_popularity=min_popularity,max_popularity=max_popularity,exclude_country=exclude_country,include_country=include_country)
+    mp3_files = get_tracks(nb_tracks, genre,subgenre, min_year=min_year, max_year=max_year,min_popularity=min_popularity,max_popularity=max_popularity,exclude_country=exclude_country,include_country=include_country,max_per_artist=max_per_artist)
 
     tmp_dir = BASE_DIR / "data" / "tmp_blindtest"
     tmp_dir.mkdir(parents=True, exist_ok=True)
@@ -268,6 +276,7 @@ def generate_blindtest_iterative_us(
     include_country: list[str] = None,
     exclude_country: list[str] = None,
     show_year: bool = False,
+    max_per_artist: int | None = 2,
 ) -> str:
     """Generate a blindtest video by generating every clip for every track and
     assemble at the end. This allows to create a blindtest with 30 or more tracks
@@ -309,6 +318,9 @@ def generate_blindtest_iterative_us(
         exclude country
     show_year: bool
         whether to display the release year alongside the reveal label.
+    max_per_artist: int | None
+        maximum number of times the same artist can appear in the blindtest.
+        Pass None to disable the cap.
 
     Returns
     -------
@@ -317,7 +329,7 @@ def generate_blindtest_iterative_us(
     """
     clean_db()
 
-    mp3_files = get_tracks(nb_tracks, genre,subgenre, min_year=min_year, max_year=max_year,min_popularity=min_popularity,max_popularity=max_popularity,exclude_country=exclude_country,include_country=include_country)
+    mp3_files = get_tracks(nb_tracks, genre,subgenre, min_year=min_year, max_year=max_year,min_popularity=min_popularity,max_popularity=max_popularity,exclude_country=exclude_country,include_country=include_country,max_per_artist=max_per_artist)
 
     tmp_dir = BASE_DIR / "data" / "tmp_blindtest"
     tmp_dir.mkdir(parents=True, exist_ok=True)
