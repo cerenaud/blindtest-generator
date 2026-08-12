@@ -159,21 +159,21 @@ au format v2 `{query: (titre, compositeur)}`, avec vérification live) :
 |---|---|---|---|
 | action | movies | ✅ migré + vérifié | 34 → 31 |
 | aventure | movies | ✅ migré + vérifié | 24 → 24 |
-| sci_fi | movies | ⏳ à faire | 35 |
-| casse | movies | ⏳ à faire | 13 |
-| catastrophe | movies | ⏳ à faire | 19 |
-| comedie | movies | ⏳ à faire | 29 |
-| criminel | movies | ⏳ à faire | 19 |
-| drame | movies | ⏳ à faire | 38 |
-| fantasy | movies | ⏳ à faire | 23 |
-| horreur | movies | ⏳ à faire | 26 |
-| historique | movies | ⏳ à faire | 29 |
-| peplum | movies | ⏳ à faire | 14 |
-| noel | movies | ⏳ à faire | 11 |
-| romance | movies | ⏳ à faire | 29 |
-| thriller | movies | ⏳ à faire | 28 |
-| western | movies | ⏳ à faire | 22 |
-| musical | movies | ⏳ à faire | 26 |
+| sci_fi | movies | ✅ migré + vérifié | 35 → 34 |
+| casse | movies | ✅ migré + vérifié | 13 → 10 |
+| catastrophe | movies | ✅ migré + vérifié | 19 → 17 |
+| comedie | movies | ✅ migré + vérifié | 29 → 20 |
+| criminel | movies | ✅ migré + vérifié | 19 → 14 |
+| drame | movies | ✅ migré + vérifié | 38 → 33 |
+| fantasy | movies | ✅ migré + vérifié | 23 → 23 |
+| horreur | movies | ✅ migré + vérifié | 26 → 23 |
+| historique | movies | ✅ migré + vérifié | 29 → 26 |
+| peplum | movies | ✅ migré + vérifié | 14 → 14 |
+| noel | movies | ✅ migré + vérifié | 11 → 9 |
+| romance | movies | ✅ migré + vérifié | 29 → 25 |
+| thriller | movies | ✅ migré + vérifié | 28 → 22 |
+| western | movies | ✅ migré + vérifié | 22 → 19 |
+| musical | movies | ✅ migré + vérifié | 26 → 26 |
 | series_sci_fi | series | ⏳ à faire | 24 |
 | series_fantasy | series | ⏳ à faire | 16 |
 | series_horreur | series | ⏳ à faire | 11 |
@@ -181,6 +181,9 @@ au format v2 `{query: (titre, compositeur)}`, avec vérification live) :
 | series_drame | series | ⏳ à faire | 27 |
 | series_comedie_sitcom | series | ⏳ à faire | 19 |
 | series_animation | series | ⏳ à faire | 17 |
+
+**Movies terminé** : 419 → 370 entrées (17/17 sous-genres migrés et
+vérifiés). Reste les 7 sous-genres series.
 
 Une fois tous les sous-genres migrés, retirer le shim de compatibilité v1/v2
 dans `import_movies_series` (commentaire `# TODO: temporary compatibility
