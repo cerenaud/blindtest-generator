@@ -987,10 +987,14 @@ def download_youtube_video(
 
 def download_all_youtube_videos():
     """download every official youtube video for every song in the db using download_youtube_video() and write in db.
+
+    Skips "movies" and "series" tracks: their `artist` field holds the movie/show
+    title rather than a real performer, so there is no "official music video" to
+    look for.
     """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    cursor.execute("SELECT title, artist, country, deezer_id, video_path FROM tracks")
+    cursor.execute("SELECT title, artist, country, deezer_id, video_path, genre FROM tracks")
     rows = cursor.fetchall()
     conn.close()
 
@@ -1002,7 +1006,11 @@ def download_all_youtube_videos():
         country = row[2]
         track_id = row[3]
         current_video_path = row[4]
+        genre = row[5]
         count += 1
+
+        if genre in ("movies", "series"):
+            continue
 
         if current_video_path and Path(current_video_path).exists():
             continue
