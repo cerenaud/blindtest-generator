@@ -161,18 +161,17 @@ def _insert_tracks(tracks: list):
             album_cover_url,
         ))
 
-        if any(
-            word.lower() in track["title"].lower()
-            for word in [
-                "anniversary",
-                "remaster",
-                "anniversaire",
-                "deluxe",
-                "remastered",
-                "best",
-                "edition",
-            ]
-        ):
+        keywords = [
+            "anniversary",
+            "remaster",
+            "anniversaire",
+            "deluxe",
+            "remastered",
+            "best",
+            "edition",
+        ]
+
+        if any(word in track["title"].lower() for word in keywords) or any(word in track["album"]["title"].lower() for word in keywords):
             data["songs"].append({
                 "name": track["title_short"],
                 "artist": track["artist"]["name"],
@@ -381,13 +380,15 @@ def import_by_artist(
 
 def get_tracks(
         nb_tracks: int,
-        genre: str = None,
-        subgenre: str = None,
+        genre: str | list[str] = None,
+        subgenre: str | list[str] = None,
         artist: str = None,
         min_year: int = None,
         max_year: int = None,
         min_popularity : int = None,
         max_popularity: int = None,
+        include_country: list[str] = None,
+        exclude_country: list[str] = None,
 ) -> list:
     """Read into the database to get tracks for generate_blindtest() function.
 
@@ -409,6 +410,10 @@ def get_tracks(
         filter by popularity int from deezer APi, min=0
     max_popularity : int = None
         filter by popularity int from deezer APi, max=999999
+    include_country: list[str] = None
+        include country
+    exclude_country: list[str] = None
+        exclude country
 
     """
     conn = sqlite3.connect(DB_PATH)
@@ -420,11 +425,21 @@ def get_tracks(
     # optionnals filters
     conditions = []
     if genre:
-        conditions.append("genre = ?")
-        params.append(genre)
+        if isinstance(genre, list):
+            placeholders = ",".join(["?"] * len(genre))
+            conditions.append(f"genre IN ({placeholders})")
+            params.extend(genre)
+        else:
+            conditions.append("genre = ?")
+            params.append(genre)
     if subgenre:
-        conditions.append("subgenre = ?")
-        params.append(subgenre)
+        if isinstance(subgenre, list):
+            placeholders = ",".join(["?"] * len(subgenre))
+            conditions.append(f"subgenre IN ({placeholders})")
+            params.extend(subgenre)
+        else:
+            conditions.append("subgenre = ?")
+            params.append(subgenre)
     if artist:
         conditions.append("artist = ?")
         params.append(artist)
@@ -440,6 +455,15 @@ def get_tracks(
     if max_popularity:
         conditions.append("popularity <= ? ")
         params.append(max_popularity)
+    if include_country:
+        placeholders = ",".join(["?"] * len(include_country))
+        conditions.append(f"country IN ({placeholders})")
+        params.extend(include_country)
+
+    if exclude_country:
+        placeholders = ",".join(["?"] * len(exclude_country))
+        conditions.append(f"country NOT IN ({placeholders})")
+        params.extend(exclude_country)
     if conditions:
         query += " AND " + " AND ".join(conditions)
 
@@ -875,3 +899,209 @@ def download_all_youtube_videos():
                 time.sleep(1) #in case of rate limit
         except Exception as e:
             print(f"Skipping video for {artist} - {title}: {e}")
+
+
+#extracting year correction from _insert_tracks() to replay it on any db
+KEYWORDS = [
+    "anniversary",
+    "remaster",
+    "anniversaire",
+    "deluxe",
+    "remastered",
+    "best",
+    "edition",
+    "michael", #michael jacskon
+    "celebration",
+    "claude françois",#claude françois
+    "mötley",
+    "motörhead",
+    "chanson"
+]
+
+def needs_year_correction(track_title: str, album_title: str, artist_name : str, subgenre_name : str) -> bool:
+    title = track_title.lower()
+    album = album_title.lower()
+    artist = artist_name.lower()
+    subgenre = subgenre_name.lower()
+
+    return any(k in title for k in KEYWORDS) or any(k in album for k in KEYWORDS) or any(k in artist for k in KEYWORDS) or any(k in subgenre for k in KEYWORDS)
+
+# def correct_years_in_database():
+#     conn = sqlite3.connect(DB_PATH)
+#     cursor = conn.cursor()
+#
+#     cursor.execute("""
+#         SELECT deezer_id, title, artist, album, year
+#         FROM tracks
+#     """)
+#
+#     rows = cursor.fetchall()
+#
+#     data = {"songs": []}
+#
+#     for deezer_id, title, artist, album, year in rows:
+#
+#         if needs_year_correction(title, album, artist):
+#             data["songs"].append({
+#                 "id": deezer_id,
+#                 "name": title,
+#                 "artist": artist,
+#                 "release_year": year
+#             })
+#
+#     if not data["songs"]:
+#         print("No tracks to correct.")
+#         return
+#
+#     corrected = correct_release_year(data).model_dump()
+#
+#
+#     for song in corrected["songs"]:
+#         cursor.execute("""
+#             UPDATE tracks
+#             SET year = ?
+#             WHERE deezer_id = ?
+#         """, (
+#             song["release_year"],
+#             song["id"]
+#         ))
+#
+#     conn.commit()
+#     conn.close()
+#
+#     print(corrected)
+#     print(f"Corrected {len(corrected['songs'])} tracks")
+
+def correct_years_in_database():
+    """Corrige les années de sortie pour toute la base, par lots de 10.
+
+    Ne traite que les pistes détectées par needs_year_correction()
+    (mots-clés dans titre/album/artiste/subgenre). Fonctionne bien,
+    déjà testée avec succès sur toute la base en une seule exécution.
+    """
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT deezer_id, title, artist, album, year, subgenre
+        FROM tracks
+    """)
+
+    rows = cursor.fetchall()
+
+    data = {"songs": []}
+
+    for deezer_id, title, artist, album, year, subgenre in rows:
+
+        if needs_year_correction(title, album, artist, subgenre):
+            data["songs"].append({
+                "id": deezer_id,
+                "name": title,
+                "artist": artist,
+                "release_year": year
+            })
+
+    if not data["songs"]:
+        print("No tracks to correct.")
+        conn.close()
+        return
+
+    corrected_songs = []
+
+    # Traitement par lots de 10
+    for i in range(0, len(data["songs"]), 10):
+        batch = {"songs": data["songs"][i:i + 10]}
+
+        print(
+            f"Processing batch {i//10 + 1} "
+            f"({len(batch['songs'])} songs)"
+        )
+
+        corrected = correct_release_year(batch).model_dump()
+
+        corrected_songs.extend(corrected["songs"])
+
+    # Mise à jour de la base
+    for song in corrected_songs:
+        cursor.execute("""
+            UPDATE tracks
+            SET year = ?
+            WHERE deezer_id = ?
+        """, (
+            song["release_year"],
+            song["id"]
+        ))
+
+    conn.commit()
+    conn.close()
+
+    print(f"Corrected {len(corrected_songs)} tracks")
+
+
+def correct_all_years_in_database():
+    """Corrige les années pour toutes les pistes avec year >= 2000, par lots de 20.
+
+    Ne filtre pas par mots-clés (contrairement à correct_years_in_database),
+    donc beaucoup plus d'appels LLM. Marche moins bien en pratique.
+    """
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT deezer_id, title, artist, year
+        FROM tracks
+        WHERE year >= 2000
+    """)
+
+    rows = cursor.fetchall()
+
+    songs = [
+        {
+            "id": deezer_id,
+            "name": title,
+            "artist": artist,
+            "release_year": year
+        }
+        for deezer_id, title, artist, year in rows
+    ]
+
+    if not songs:
+        print("No tracks to correct.")
+        conn.close()
+        return
+
+    corrected_songs = []
+
+    total_batches = (len(songs) - 1) // 20 + 1
+
+    for i in range(0, len(songs), 20):
+        batch = {"songs": songs[i:i + 20]}
+
+        print(
+            f"Processing batch {i // 20 + 1}/{total_batches} "
+            f"({len(batch['songs'])} songs)"
+        )
+
+        try:
+            corrected = correct_release_year(batch).model_dump()
+            corrected_songs.extend(corrected["songs"])
+        except Exception as e:
+            print(
+                f"Error while processing batch "
+                f"{i // 20 + 1}: {e}"
+            )
+
+    for song in corrected_songs:
+        cursor.execute("""
+            UPDATE tracks
+            SET year = ?
+            WHERE deezer_id = ?
+        """, (
+            song["release_year"],
+            song["id"]
+        ))
+
+    conn.commit()
+    conn.close()
+
+    print(f"Corrected {len(corrected_songs)} tracks")
