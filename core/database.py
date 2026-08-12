@@ -419,6 +419,17 @@ def import_by_artist(
     """
     Fetch nb_tracks music from a given artist name from deezer API.
 
+    Warning
+    -------
+    Deezer's catalog depth varies a lot per artist: mainstream artists
+    (e.g. Gorillaz) can return the full nb_tracks requested, but less
+    popular/niche artists may only have a handful of tracks referenced
+    on Deezer. This function does not raise if fewer tracks than
+    nb_tracks are found, it just inserts whatever was returned. If you
+    need a guaranteed count (e.g. for a single-artist blindtest), check
+    the actual number of tracks in the db for that artist afterward
+    (get_tracks(..., artist=...)) before generating the blindtest.
+
     Parameters
     ----------
     artist_name : str
