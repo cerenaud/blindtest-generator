@@ -18,8 +18,8 @@ if __name__ == "__main__":
     import_by_genre("funk_soul",20) #max : 222
 
     #importing movies/series themes: 1 track per query entry (see genres.py), not 3 per artist
-    import_movies_series("movies",20) #max : 419
-    import_movies_series("series",20) #max : 140
+    import_movies_series("movies",20) #max : 370
+    import_movies_series("series",20) #max : 104
 
     #downloading song previews and album covers for all music in the database.
     download_all_previews()
