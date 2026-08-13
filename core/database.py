@@ -505,6 +505,66 @@ def import_by_artist(
     _insert_tracks(tracks)
 
 
+# Snapshot computed on 2026-08-13 from the tertiles (33%/67%) of the `popularity`
+# column, grouped by genre (see docs/popularity-difficulty-thresholds.md for the
+# full methodology and raw stats). Popularity distributions vary a lot between
+# genres (e.g. a "popular" pop track and a "popular" movies track are on very
+# different scales), so a single global threshold like `popularity > 900000`
+# doesn't work across genres -- these are per-genre instead.
+# difficile = popularity < difficile_max
+# intermediaire = difficile_max <= popularity < facile_min
+# facile = popularity >= facile_min
+# Snapshot sample sizes (n): chanson_fr 814, pop 917, rap 899, rock 1386,
+# country 175, electro 1087, funk_soul 199, metal 1017, movies 363, series 103.
+DIFFICULTY_THRESHOLDS = {
+    "chanson_fr": {"difficile_max": 617069, "facile_min": 810047},
+    "pop":        {"difficile_max": 612272, "facile_min": 816284},
+    "rap":        {"difficile_max": 474900, "facile_min": 715719},
+    "rock":       {"difficile_max": 386515, "facile_min": 632738},
+    "country":    {"difficile_max": 386787, "facile_min": 510484},
+    "electro":    {"difficile_max": 317417, "facile_min": 510583},
+    "funk_soul":  {"difficile_max": 435504, "facile_min": 649426},
+    "metal":      {"difficile_max": 267768, "facile_min": 424762},
+    "movies":     {"difficile_max": 141699, "facile_min": 346471},
+    "series":     {"difficile_max": 206094, "facile_min": 411353},
+}
+
+def popularity_range_for_difficulty(
+        genre: str,
+        difficulty: str
+) -> tuple[int | None, int | None]:
+    """Get the (min_popularity, max_popularity) range for a genre + difficulty level.
+
+    Uses the DIFFICULTY_THRESHOLDS snapshot (see above) to convert a difficulty
+    label into the min_popularity/max_popularity values expected by get_tracks().
+
+    Parameters
+    ----------
+    genre : str
+        genre name, must be a key of DIFFICULTY_THRESHOLDS.
+    difficulty : str
+        one of "facile", "intermediaire", "difficile".
+
+    Returns
+    -------
+    tuple[int | None, int | None]
+        (min_popularity, max_popularity) ready to pass to get_tracks().
+    """
+    if genre not in DIFFICULTY_THRESHOLDS:
+        raise ValueError(f"No popularity thresholds for genre: {genre}")
+
+    thresholds = DIFFICULTY_THRESHOLDS[genre]
+
+    if difficulty == "facile":
+        return thresholds["facile_min"], None
+    if difficulty == "intermediaire":
+        return thresholds["difficile_max"], thresholds["facile_min"]
+    if difficulty == "difficile":
+        return None, thresholds["difficile_max"]
+
+    raise ValueError(f"Unknown difficulty: {difficulty!r} (expected facile/intermediaire/difficile)")
+
+
 def get_tracks(
         nb_tracks: int,
         genre: str | list[str] = None,
