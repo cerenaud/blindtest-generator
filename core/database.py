@@ -511,22 +511,22 @@ def import_by_artist(
 # genres (e.g. a "popular" pop track and a "popular" movies track are on very
 # different scales), so a single global threshold like `popularity > 900000`
 # doesn't work across genres -- these are per-genre instead.
-# difficile = popularity < difficile_max
-# intermediaire = difficile_max <= popularity < facile_min
-# facile = popularity >= facile_min
+# hard = popularity < hard_max
+# intermediate = hard_max <= popularity < easy_min
+# easy = popularity >= easy_min
 # Snapshot sample sizes (n): chanson_fr 814, pop 917, rap 899, rock 1386,
 # country 175, electro 1087, funk_soul 199, metal 1017, movies 363, series 103.
 DIFFICULTY_THRESHOLDS = {
-    "chanson_fr": {"difficile_max": 617069, "facile_min": 810047},
-    "pop":        {"difficile_max": 612272, "facile_min": 816284},
-    "rap":        {"difficile_max": 474900, "facile_min": 715719},
-    "rock":       {"difficile_max": 386515, "facile_min": 632738},
-    "country":    {"difficile_max": 386787, "facile_min": 510484},
-    "electro":    {"difficile_max": 317417, "facile_min": 510583},
-    "funk_soul":  {"difficile_max": 435504, "facile_min": 649426},
-    "metal":      {"difficile_max": 267768, "facile_min": 424762},
-    "movies":     {"difficile_max": 141699, "facile_min": 346471},
-    "series":     {"difficile_max": 206094, "facile_min": 411353},
+    "chanson_fr": {"hard_max": 617069, "easy_min": 810047},
+    "pop":        {"hard_max": 612272, "easy_min": 816284},
+    "rap":        {"hard_max": 474900, "easy_min": 715719},
+    "rock":       {"hard_max": 386515, "easy_min": 632738},
+    "country":    {"hard_max": 386787, "easy_min": 510484},
+    "electro":    {"hard_max": 317417, "easy_min": 510583},
+    "funk_soul":  {"hard_max": 435504, "easy_min": 649426},
+    "metal":      {"hard_max": 267768, "easy_min": 424762},
+    "movies":     {"hard_max": 141699, "easy_min": 346471},
+    "series":     {"hard_max": 206094, "easy_min": 411353},
 }
 
 def popularity_range_for_difficulty(
@@ -543,7 +543,7 @@ def popularity_range_for_difficulty(
     genre : str
         genre name, must be a key of DIFFICULTY_THRESHOLDS.
     difficulty : str
-        one of "facile", "intermediaire", "difficile".
+        one of "easy", "intermediate", "hard".
 
     Returns
     -------
@@ -555,14 +555,14 @@ def popularity_range_for_difficulty(
 
     thresholds = DIFFICULTY_THRESHOLDS[genre]
 
-    if difficulty == "facile":
-        return thresholds["facile_min"], None
-    if difficulty == "intermediaire":
-        return thresholds["difficile_max"], thresholds["facile_min"]
-    if difficulty == "difficile":
-        return None, thresholds["difficile_max"]
+    if difficulty == "easy":
+        return thresholds["easy_min"], None
+    if difficulty == "intermediate":
+        return thresholds["hard_max"], thresholds["easy_min"]
+    if difficulty == "hard":
+        return None, thresholds["hard_max"]
 
-    raise ValueError(f"Unknown difficulty: {difficulty!r} (expected facile/intermediaire/difficile)")
+    raise ValueError(f"Unknown difficulty: {difficulty!r} (expected easy/intermediate/hard)")
 
 
 def get_tracks(
