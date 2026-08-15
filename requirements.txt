@@ -12,3 +12,4 @@ pydantic
 python-dotenv
 yt-dlp
 yt-dlp-ejs
+bgutil-ytdlp-pot-provider

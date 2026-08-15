@@ -46,6 +46,17 @@ One functions also use OpenAI through `ai/agents.py`. Make sure your API key is 
 
 YouTube video downloads (`download_all_youtube_videos` in `core/database.py`) need a Firefox profile logged into a YouTube account to pass age-restricted videos — yt-dlp reads the cookies live from Firefox. Without that, age-restricted videos are skipped (not a fatal error, just no video for that track).
 
+Age-restricted videos also need a PO Token provider, otherwise the actual download fails with `HTTP Error 403: Forbidden`. `bgutil-ytdlp-pot-provider` (in `requirements.txt`) handles this, but its Node.js server script isn't installed by pip — clone and build it once (requires Node.js 20+):
+
+```bash
+git clone --single-branch --branch 1.3.1 https://github.com/Brainicism/bgutil-ytdlp-pot-provider.git ~/bgutil-ytdlp-pot-provider
+cd ~/bgutil-ytdlp-pot-provider/server
+npm ci
+npx tsc
+```
+
+yt-dlp auto-detects it from the home directory, no further config needed.
+
 ## Creating music database
 
 Execute the functions in main.py, it will guide you for creating and filling the database.
