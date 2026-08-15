@@ -983,6 +983,7 @@ def get_youtube_video_url(
         with YoutubeDL({
             "skip_download": True,
             "extract_flat": True,  # evite resolution des videos
+            "cookiesfrombrowser": ("firefox",), #anonymous search silently filters queries with flagged-looking words (e.g. "Cum", "SEX")
         }) as ydl:
 
             results = ydl.extract_info(f"ytsearch5:{query}", download=False)
