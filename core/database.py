@@ -712,7 +712,9 @@ def download_preview(
     #fetch the preview url which is temporary
     response_id = requests.get(f"https://api.deezer.com/track/{deezer_id}")
     track = response_id.json()
-    preview_url = track["preview"]
+    preview_url = track.get("preview")
+    if not preview_url:
+        return None
     response_preview = requests.get(preview_url)
 
     preview_path = BASE_DIR / "data" / "music" / f"{deezer_id}.mp3"
@@ -741,7 +743,10 @@ def download_all_previews():
     for row in rows:
         deezer_id = row[0]
         path = download_preview(deezer_id)
-        print(f"Downloaded {deezer_id}")
+        if path is None:
+            print(f"Skipped {deezer_id} (no preview available on Deezer)")
+        else:
+            print(f"Downloaded {deezer_id}")
 
 def download_album_cover(
     url: str,
@@ -1053,13 +1058,17 @@ def download_youtube_video(
                 "fragment_retries": 10,
                 "concurrent_fragment_downloads": 3,
 
-                #"cookiesfrombrowser": ("chrome",), #doesn't seem to work
+                #"cookiesfrombrowser": ("chrome",), #chrome cookies are encrypted in a way yt-dlp can't decrypt on Windows
 
-                # "js_runtimes": {
-                #     "node": {
-                #         "path": "C:/Program Files/nodejs/node.exe"
-                #     }
-                # }
+                #needed for age-restricted videos; read live from Firefox since exported
+                #cookies.txt files get invalidated fast (YouTube rotates session cookies)
+                "cookiesfrombrowser": ("firefox",),
+
+                "js_runtimes": {
+                    "node": {
+                        "path": "C:/Program Files/nodejs/node.exe"
+                    }
+                },
 
             }
 
@@ -1091,6 +1100,9 @@ def download_all_youtube_videos():
     Skips "movies" and "series" tracks: their `artist` field holds the movie/show
     title rather than a real performer, so there is no "official music video" to
     look for.
+
+    Needs Firefox logged into a YouTube account (cookies are read live from it) to
+    pass age-restricted videos; without that, those tracks are just skipped.
     """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()

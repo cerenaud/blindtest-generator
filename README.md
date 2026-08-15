@@ -44,6 +44,8 @@ ffmpeg -version
 
 One functions also use OpenAI through `ai/agents.py`. Make sure your API key is available in your environment or `.env` file. You will only need a free API key.
 
+YouTube video downloads (`download_all_youtube_videos` in `core/database.py`) need a Firefox profile logged into a YouTube account to pass age-restricted videos — yt-dlp reads the cookies live from Firefox. Without that, age-restricted videos are skipped (not a fatal error, just no video for that track).
+
 ## Creating music database
 
 Execute the functions in main.py, it will guide you for creating and filling the database.
